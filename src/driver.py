@@ -3,14 +3,6 @@ import tinytag
 import csv
 
 
-#TODO: Retrieve user login credentials
-#TODO: conncect to spotify API and authenticate tokens
-#TODO: conncect to spotify API and authenticate user login
-#TODO: create playlist
-#TODO: Search for songs on spotify, if found add to playlist, if not found, add to list of songs not found
-#TODO: print list of songs not found to user
-
-
 def csv_writer(playlist_name, metadate_list):
     with open('metadata/' + playlist_name + '.csv', 'w') as f:
         for file in metadate_list:
