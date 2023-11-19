@@ -27,6 +27,7 @@ def csv_writer(playlist_name, metadata_list):
         # writer.writerow(['Title', 'Artist', 'Album'])
         for file in metadata_list:
             writer.writerow([file['title'], file['artist'], file['album']])
+    return csv_file_path
 
 
 def metadata_harvester(audio_files):
@@ -64,30 +65,77 @@ def folder_finder(target_directory):
     return audio_files
 
 
+def get_or_create_playlist(sp, user_id, playlist_name):
+    playlists = sp.current_user_playlists()
+    for playlist in playlists['items']:
+        if playlist['name'] == playlist_name:
+            return playlist['id']  # Playlist exists, return its ID
+
+    # Playlist not found, create a new one
+    new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
+    return new_playlist['id']
+
+
+def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
+    not_in_playlist = []
+    existing_track_ids = set()
+
+    # Retrieve current tracks in the playlist
+    results = sp.playlist_items(playlist_id)
+    for item in results['items']:
+        track = item['track']
+        existing_track_ids.add(track['id'])
+
+    with open(csv_file_path, 'r', encoding='utf-8') as csv_file:
+        csv_reader = csv.reader(csv_file)
+        for row in csv_reader:
+            query = f"track:{row[0]} artist:{row[1]}"
+            result = sp.search(query, type='track', limit=1)
+            tracks = result['tracks']['items']
+            if tracks and tracks[0]['id'] not in existing_track_ids:
+                not_in_playlist.append(tracks[0]['id'])
+            elif not tracks:
+                print(f"Could not find track: {row[0]} by {row[1]}")
+
+    return not_in_playlist
+
+
+def add_songs_to_playlist(sp, playlist_id, track_ids):
+    added_tracks = []
+    if track_ids:
+        sp.playlist_add_items(playlist_id, track_ids)
+        added_tracks = track_ids
+    return added_tracks
+
+
 def main():
     # Retrieve environment variables
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
-    # Authenticate with Spotify API
+    # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
         auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8080/callback'
                                   , scope='playlist-modify-public playlist-read-private'))
 
-    user_profile = sp.current_user()
-    print(user_profile)
+    target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
+    playlist_name = input("Please enter the name of the playlist you would like to create:")
+    print("Harvesting audio files...")
+    audio_files = folder_finder(target_directory)
+    metadata_harvester(audio_files)
+    csv_file_path = csv_writer(playlist_name, metadata_harvester(audio_files))
 
-
-    # target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
-    # playlist_name = input("Please enter the name of the playlist you would like to create:")
-    # print("Harvesting audio files...")
-    # audio_files = folder_finder(target_directory)
-    # metadata_harvester(audio_files)
-    # csv_writer(playlist_name, metadata_harvester(audio_files))
-    #
     # with open(os.path.join('../metadata', playlist_name + '.csv'), 'r', encoding='utf-8') as csv_file:
     #     print(csv_file.read())
+
+    user_id = sp.current_user()['id']
+    playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
+
+    track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
+    added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist)
+    print("========================================")
+    print(f"Added {len(added_tracks)} songs to the playlist.")
 
 
 if __name__ == '__main__':
