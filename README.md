@@ -13,7 +13,7 @@ To create a playlist of these songs on Spotify.
 
 ## To-Do List:
 - [ ] Connect to spotify API and authenticate tokens 
-- [ ] Learn & figure out how to handle user login credentials and authentication
+- [ ] Figure out how to handle user login credentials and authentication
 - [ ] Connect to spotify API and authenticate user login
 - [ ] Check if user has playlist with specified name, if not create the playlist 
 - [ ] Search for songs on spotify, if found add to playlist, if not found, add to list of songs not found 

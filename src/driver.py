@@ -2,6 +2,8 @@ import os
 import tinytag
 import csv
 from dotenv import load_dotenv
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -64,18 +66,28 @@ def folder_finder(target_directory):
 
 def main():
     # Retrieve environment variables
-    client_id = os.getenv('CLIENT_ID')
-    client_secret = os.getenv('CLIENT_SECRET')
+    load_dotenv()
+    client_id = os.getenv('SPOTIFY_CLIENT_ID')
+    client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
-    target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
-    playlist_name = input("Please enter the name of the playlist you would like to create:")
-    print("Harvesting audio files...")
-    audio_files = folder_finder(target_directory)
-    metadata_harvester(audio_files)
-    csv_writer(playlist_name, metadata_harvester(audio_files))
+    # Authenticate with Spotify API
+    sp = spotipy.Spotify(
+        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8080/callback'
+                                  , scope='playlist-modify-public playlist-read-private'))
 
-    with open(os.path.join('../metadata', playlist_name + '.csv'), 'r', encoding='utf-8') as csv_file:
-        print(csv_file.read())
+    user_profile = sp.current_user()
+    print(user_profile)
+
+
+    # target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
+    # playlist_name = input("Please enter the name of the playlist you would like to create:")
+    # print("Harvesting audio files...")
+    # audio_files = folder_finder(target_directory)
+    # metadata_harvester(audio_files)
+    # csv_writer(playlist_name, metadata_harvester(audio_files))
+    #
+    # with open(os.path.join('../metadata', playlist_name + '.csv'), 'r', encoding='utf-8') as csv_file:
+    #     print(csv_file.read())
 
 
 if __name__ == '__main__':
