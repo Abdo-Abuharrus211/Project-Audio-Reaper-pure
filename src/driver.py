@@ -126,9 +126,6 @@ def main():
     metadata_harvester(audio_files)
     csv_file_path = csv_writer(playlist_name, metadata_harvester(audio_files))
 
-    # with open(os.path.join('../metadata', playlist_name + '.csv'), 'r', encoding='utf-8') as csv_file:
-    #     print(csv_file.read())
-
     user_id = sp.current_user()['id']
     playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
 
