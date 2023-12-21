@@ -44,7 +44,7 @@ def metadata_harvester(audio_files):
         if not os.path.exists(failure_directory):
             os.makedirs(failure_directory)
 
-        with open(failure_file_path, 'a') as fail_file:
+        with open(failure_file_path, 'a', encoding='utf-8') as fail_file:
             for file in audio_files:
                 audio_file = tinytag.TinyTag.get(file)
                 if audio_file.title or audio_file.artist or audio_file.album:
@@ -102,9 +102,12 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
 
 def add_songs_to_playlist(sp, playlist_id, track_ids):
     added_tracks = []
-    if track_ids:
-        sp.playlist_add_items(playlist_id, track_ids)
-        added_tracks = track_ids
+    added_tracks = []
+    batch_size = 100
+    for i in range(0, len(track_ids), batch_size):
+        batch = track_ids[i:i + batch_size]
+        sp.playlist_add_items(playlist_id, batch)
+        added_tracks.extend(batch)
     return added_tracks
 
 
