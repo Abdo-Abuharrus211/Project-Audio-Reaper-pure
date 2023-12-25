@@ -1,6 +1,4 @@
-import os
-import tinytag
-import csv
+import os, re, tinytag, csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -76,11 +74,20 @@ def get_or_create_playlist(sp, user_id, playlist_name):
     return new_playlist['id']
 
 
+def clean_metadata(title, artist):
+    # Remove common extraneous information from titles
+    title = re.sub(r'\(.*\)|\[.*\]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
+                   flags=re.I).strip()
+    # Refine artist name
+    artist = artist.split(',')[0]  # Take the first artist if there are multiple
+    artist = re.sub(r'\(.*\)|\[.*\]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
+    return title, artist
+
+
 def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     not_in_playlist = []
     existing_track_ids = set()
 
-    # Retrieve current tracks in the playlist
     results = sp.playlist_items(playlist_id)
     for item in results['items']:
         track = item['track']
@@ -89,19 +96,20 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     with open(csv_file_path, 'r', encoding='utf-8') as csv_file:
         csv_reader = csv.reader(csv_file)
         for row in csv_reader:
-            query = f"track:{row[0]} artist:{row[1]}"
+            # Clean up metadata before search
+            clean_title, clean_artist = clean_metadata(row[0], row[1])
+            query = f"track:{clean_title} artist:{clean_artist}"
             result = sp.search(query, type='track', limit=1)
             tracks = result['tracks']['items']
             if tracks and tracks[0]['id'] not in existing_track_ids:
                 not_in_playlist.append(tracks[0]['id'])
             elif not tracks:
-                print(f"Could not find track: {row[0]} by {row[1]}")
+                print(f"Could not find track: {clean_title} by {clean_artist}")
 
     return not_in_playlist
 
 
 def add_songs_to_playlist(sp, playlist_id, track_ids):
-    added_tracks = []
     added_tracks = []
     batch_size = 100
     for i in range(0, len(track_ids), batch_size):
@@ -124,7 +132,9 @@ def main():
 
     target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
     playlist_name = input("Please enter the name of the playlist you would like to create:")
-    print("Harvesting audio files...")
+    library_size = len(os.listdir(target_directory))
+    print("Harvesting audio files..." + str(library_size))
+
     audio_files = folder_finder(target_directory)
     metadata_harvester(audio_files)
     csv_file_path = csv_writer(playlist_name, metadata_harvester(audio_files))
@@ -135,7 +145,7 @@ def main():
     track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
     added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist)
     print("========================================")
-    print(f"Added {len(added_tracks)} songs to the playlist.")
+    print(f"Added {len(added_tracks[0])} songs to the playlist.")
 
 
 if __name__ == '__main__':
