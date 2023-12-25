@@ -6,23 +6,25 @@ from collections import defaultdict
 
 
 def csv_writer(playlist_name, metadata_list):
-    # Get the directory of the current script
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    # Get the parent directory (project root)
-    parent_directory = os.path.dirname(current_directory)
-    # Path to the 'metadata' directory in the project root
-    metadata_directory = os.path.join(parent_directory, 'metadata')
-    # Check if the 'metadata' directory exists, if not, create it
-    if not os.path.exists(metadata_directory):
-        os.makedirs(metadata_directory)
+    """
+    Write metadata to a CSV file that's named after the user's playlist.
 
-    # Path to the CSV file in the 'metadata' directory
-    csv_file_path = os.path.join(metadata_directory, playlist_name + '.csv')
-
+    :param: playlist_name: a string representing the name of the playlist as entered by the user
+    :param: metadata_list: a list of dictionaries containing the metadata of each audio file
+    :precondition: playlist_name is a string, metadata_list is a list of dictionaries
+    :postcondition: a CSV file is created in the 'metadata' directory
+    :return: a string for the path of the CSV file
+    """
+    current_directory_path = os.path.dirname(os.path.abspath(__file__))
+    parent_directory_path = os.path.dirname(current_directory_path)
+    metadata_directory_path = os.path.join(parent_directory_path, 'metadata')
+    if not os.path.exists(metadata_directory_path):
+        os.makedirs(metadata_directory_path)
+    csv_file_path = os.path.join(metadata_directory_path, playlist_name + '.csv')
     # Create/Open the CSV file
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        # If you have headers like 'title', 'artist', 'album', you can write them here
+        # If you have headers like 'title', 'artist', 'album', you can write them here:
         # writer.writerow(['Title', 'Artist', 'Album'])
         for file in metadata_list:
             writer.writerow([file['title'], file['artist'], file['album']])
@@ -30,43 +32,61 @@ def csv_writer(playlist_name, metadata_list):
 
 
 def parse_filename(file_name):
+    """
+    Parse the song file's name for relevant information to identify the song.
+
+    :param file_name: a string representing the file's name
+    :precondition: file_name must be a valid string
+    :postcondition: replace excess characters with spaces and split the string
+    :return: a substring containing only relevant information
+    """
     # Remove the file extension
     name, _ = os.path.splitext(file_name)
-    # Replace common delimiters with a space
     for delimiter in ['-', '_', '|', '', '(', ')', '[', ']', '&']:
         name = name.replace(delimiter, ' ')
-    # Try to split by artist and title
     parts = name.split(' ')
     return parts
 
 
-def metadata_harvester(audio_files):
+def metadata_harvester(song_files):
+    """
+    Extract metadata (title, artist, & album) from song files.
+
+    :param song_files: a list of MP3 and WAV files in the user specified directory
+    :precondition: list must be non-empty and contain strings representing file paths
+    :postcondition: extract necessary metadata from each file
+    :return: a list of dictionaries of the songs' metadate, each song has a dictionary
+    """
     metadata = []
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    parent_directory = os.path.dirname(current_directory)
-    # Path to the 'metadata' directory in the project root
-    failure_directory = os.path.join(parent_directory, 'failure')
+    path_current_directory = os.path.dirname(os.path.abspath(__file__))
+    path_parent_directory = os.path.dirname(path_current_directory)
+    failure_directory = os.path.join(path_parent_directory, 'failure')
     failure_file_path = os.path.join(failure_directory, 'metadataFail.txt')
-    if not audio_files:
+    if not song_files:
         print("No audio files found in directory.")
     else:
-        # Ensure the 'failure' directory exists
         if not os.path.exists(failure_directory):
             os.makedirs(failure_directory)
 
         with open(failure_file_path, 'a', encoding='utf-8') as fail_file:
-            for file in audio_files:
+            for file in song_files:
                 audio_file = tinytag.TinyTag.get(file)
                 if audio_file.title or audio_file.artist or audio_file.album:
                     metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
                 else:
-                    # Write the file name to metadataFail.txt
                     fail_file.write(file + '\n')
 
     return metadata
 
 
-def folder_finder(target_directory):
+def file_finder(target_directory):
+    """
+    Find all the MP3 and WAV files in a directory.
+
+    :param target_directory: a string representing the path for the target folder
+    :precondition: target_directory must be a valid path string
+    :return: a list of strings, each being the path to a mp3 or wav file
+    """
     audio_files = []
     for file in os.listdir(target_directory):
         if file.endswith(".mp3") or file.endswith(".wav"):
@@ -76,17 +96,34 @@ def folder_finder(target_directory):
 
 
 def get_or_create_playlist(sp, user_id, playlist_name):
+    """
+    Retrieve user's Spotify playlist if it exists, otherwise create one.
+
+    :param sp: authenticated Spotify object
+    :param user_id: The user's Spotify ID
+    :param playlist_name: the name of the playlist
+    :precondition: user_id and playlist_name are valid strings
+    :postcondition: either get the playlist's id or create a new one and get its id
+    :return: the playlist's id
+    """
     playlists = sp.current_user_playlists()
     for playlist in playlists['items']:
         if playlist['name'] == playlist_name:
-            return playlist['id']  # Playlist exists, return its ID
+            return playlist['id']
 
-    # Playlist not found, create a new one
     new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
     return new_playlist['id']
 
 
 def clean_metadata(title, artist):
+    """
+    Remove excess unwanted characters from a song's metadata.
+
+    :param title: a string representing the song's title
+    :param artist: a string representing the song's artist
+    :precondition: title and artist are valid strings
+    :return: a tuple of strings representing the cleaned title and artist
+    """
     # Remove common extraneous information from titles
     title = re.sub(r'\(.*\)|\[.*\]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
@@ -97,8 +134,19 @@ def clean_metadata(title, artist):
 
 
 def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
+    """
+    Search for songs in the CSV file after checking they're not in the playlist.
+
+    :param sp: authenticated Spotify object
+    :param playlist_id: a string representing the playlist's id
+    :param csv_file_path: a string representing the path to the CSV file
+    :precondition: playlist_id and csv_file_path are valid strings
+    :return: a tuple of lists, the first list contains the track ids of songs not in the playlist, and the second list
+    contains the titles of songs that could not be found on Spotify
+    """
     not_in_playlist = []
     existing_track_ids = set()
+    failed_tracks = []
 
     results = sp.playlist_items(playlist_id)
     for item in results['items']:
@@ -116,12 +164,21 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
             if tracks and tracks[0]['id'] not in existing_track_ids:
                 not_in_playlist.append(tracks[0]['id'])
             elif not tracks:
-                print(f"Could not find track: {clean_title} by {clean_artist}")
+                failed_tracks.append(f"{clean_title} by {clean_artist}")
+                print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
 
-    return not_in_playlist
+    return not_in_playlist, failed_tracks
 
 
 def search_filename(sp, file_name):
+    """
+    Search for a song on Spotify using the file name.
+
+    :param sp: an authenticated Spotify object
+    :param file_name: a string representing the file's name
+    :precondition: file_name is a valid string
+    :return: a string representing the track's id
+    """
     parts = parse_filename(file_name)
     best_match = None
     max_popularity = -1
@@ -144,6 +201,16 @@ def search_filename(sp, file_name):
 
 
 def add_songs_to_playlist(sp, playlist_id, track_ids):
+    """
+    Add songs to the Spotify playlist in batches of 100 songs at a time.
+
+    :param sp: an authenticated Spotify object
+    :param playlist_id: a string representing the playlist's IDs
+    :param track_ids: a list of strings representing song IDs
+    :precondition: playlist_id is a valid string
+    :precondition: track_id is a valid non-empty list of strings
+    :return: a list of songs added to the playlist
+    """
     added_tracks = []
     batch_size = 100
     for i in range(0, len(track_ids), batch_size):
@@ -169,7 +236,7 @@ def main():
     library_size = len(os.listdir(target_directory))
     print("Harvesting audio files..." + str(library_size))
 
-    audio_files = folder_finder(target_directory)
+    audio_files = file_finder(target_directory)
     metadata_list = metadata_harvester(audio_files)
     csv_file_path = csv_writer(playlist_name, metadata_list)
 
@@ -177,7 +244,7 @@ def main():
     playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
 
     track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
-    added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist)
+    added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist[0])
 
     print("========================================")
     print(f"Added {len(added_tracks)} song(s) to the playlist.")
