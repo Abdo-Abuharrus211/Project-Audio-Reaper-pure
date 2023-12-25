@@ -24,10 +24,14 @@ def csv_writer(playlist_name, metadata_list):
     # Create/Open the CSV file
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        # If you have headers like 'title', 'artist', 'album', you can write them here:
-        # writer.writerow(['Title', 'Artist', 'Album'])
-        for file in metadata_list:
-            writer.writerow([file['title'], file['artist'], file['album']])
+        # Write headers to the CSV
+        writer.writerow(['Title', 'Artist', 'Album', 'Filename'])
+        for file_metadata in metadata_list:
+            title = file_metadata.get('title', '')  # Use an empty string if the key doesn't exist
+            artist = file_metadata.get('artist', '')
+            album = file_metadata.get('album', '')
+            filename = file_metadata.get('file', '')  # This assumes that 'file' key always exists
+            writer.writerow([title, artist, album, filename])
     return csv_file_path
 
 
@@ -51,11 +55,12 @@ def parse_filename(file_name):
 def metadata_harvester(song_files):
     """
     Extract metadata (title, artist, & album) from song files.
+    For files without metadata, store only the filename in the dictionary.
 
     :param song_files: a list of MP3 and WAV files in the user specified directory
     :precondition: list must be non-empty and contain strings representing file paths
     :postcondition: extract necessary metadata from each file
-    :return: a list of dictionaries of the songs' metadate, each song has a dictionary
+    :return: a list of dictionaries of the songs' metadata, each song has a dictionary
     """
     metadata = []
     path_current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -69,12 +74,21 @@ def metadata_harvester(song_files):
             os.makedirs(failure_directory)
 
         with open(failure_file_path, 'a', encoding='utf-8') as fail_file:
-            for file in song_files:
-                audio_file = tinytag.TinyTag.get(file)
+            for file_path in song_files:
+                file_name = os.path.basename(file_path)
+                audio_file = tinytag.TinyTag.get(file_path)
                 if audio_file.title or audio_file.artist or audio_file.album:
-                    metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
+                    metadata.append({
+                        'file': file_name,
+                        'title': audio_file.title if audio_file.title else '',
+                        'artist': audio_file.artist if audio_file.artist else '',
+                        'album': audio_file.album if audio_file.album else ''
+                    })
                 else:
-                    fail_file.write(file + '\n')
+                    # Store only the filename (not the full path) for songs without metadata
+                    metadata.append({'file': file_name})
+                    # Write only the filename to metadataFail.txt
+                    fail_file.write(file_name + '\n')
 
     return metadata
 
@@ -243,8 +257,21 @@ def main():
     user_id = sp.current_user()['id']
     playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
 
-    track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
-    added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist[0])
+    # Search for songs on Spotify using metadata
+    track_ids_to_add, tracks_not_found = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
+
+    # Try to find tracks using their file names if they were not found using metadata
+    for file_path in tracks_not_found:
+        file_name = os.path.basename(file_path)
+        track_id = search_filename(sp, file_name)
+        if track_id:
+            track_ids_to_add.append(track_id)
+            print(f"Found and added {file_name} as {track_id} to the playlist.")
+        else:
+            print(f"Could not find a Spotify match for {file_name}")
+
+    # Add found songs to the playlist
+    added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_to_add)
 
     print("========================================")
     print(f"Added {len(added_tracks)} song(s) to the playlist.")
