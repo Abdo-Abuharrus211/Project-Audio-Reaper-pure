@@ -2,6 +2,7 @@ import os, re, tinytag, csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from collections import defaultdict
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -26,6 +27,17 @@ def csv_writer(playlist_name, metadata_list):
         for file in metadata_list:
             writer.writerow([file['title'], file['artist'], file['album']])
     return csv_file_path
+
+
+def parse_filename(file_name):
+    # Remove the file extension
+    name, _ = os.path.splitext(file_name)
+    # Replace common delimiters with a space
+    for delimiter in ['-', '_', '|', '', '(', ')', '[', ']', '&']:
+        name = name.replace(delimiter, ' ')
+    # Try to split by artist and title
+    parts = name.split(' ')
+    return parts
 
 
 def metadata_harvester(audio_files):
@@ -109,6 +121,28 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     return not_in_playlist
 
 
+def search_filename(sp, file_name):
+    parts = parse_filename(file_name)
+    best_match = None
+    max_popularity = -1
+
+    # Try all combinations of parts as artist and title
+    for i in range(1, len(parts)):
+        artist = ' '.join(parts[:i])
+        title = ' '.join(parts[i:])
+        query = f'track:{title} artist:{artist}'
+        result = sp.search(query, type='track', limit=1)
+        tracks = result['tracks']['items']
+        if tracks:
+            track = tracks[0]
+            # Select the track with the highest popularity
+            if track['popularity'] > max_popularity:
+                best_match = track['id']
+                max_popularity = track['popularity']
+
+    return best_match
+
+
 def add_songs_to_playlist(sp, playlist_id, track_ids):
     added_tracks = []
     batch_size = 100
@@ -136,16 +170,19 @@ def main():
     print("Harvesting audio files..." + str(library_size))
 
     audio_files = folder_finder(target_directory)
-    metadata_harvester(audio_files)
-    csv_file_path = csv_writer(playlist_name, metadata_harvester(audio_files))
+    metadata_list = metadata_harvester(audio_files)
+    csv_file_path = csv_writer(playlist_name, metadata_list)
 
     user_id = sp.current_user()['id']
     playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
 
     track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
     added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist)
+
     print("========================================")
-    print(f"Added {len(added_tracks[0])} songs to the playlist.")
+    print(f"Added {len(added_tracks)} song(s) to the playlist.")
+    print("========================================")
+    print("AudioReaper has finished harvesting your audio files.")
 
 
 if __name__ == '__main__':
