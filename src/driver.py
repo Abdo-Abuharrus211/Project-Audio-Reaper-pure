@@ -226,6 +226,10 @@ def main():
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
+    # clear the data in the failed metadataFail file
+    with open("./failure/metadataFail.txt", 'w') as file:
+        pass
+
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
         auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8080/callback'
