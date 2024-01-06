@@ -2,7 +2,6 @@ import os, re, tinytag, csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from collections import defaultdict
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -68,7 +67,8 @@ def metadata_harvester(song_files):
         if not os.path.exists(failure_directory):
             os.makedirs(failure_directory)
 
-        with open(failure_file_path, 'a', encoding='utf-8') as fail_file:
+        with open(failure_file_path, 'w', encoding='utf-8') as fail_file:
+            fail_file.truncate()
             for file in song_files:
                 audio_file = tinytag.TinyTag.get(file)
                 if audio_file.title or audio_file.artist or audio_file.album:
@@ -225,10 +225,6 @@ def main():
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-
-    # clear the data in the failed metadataFail file
-    with open("./failure/metadataFail.txt", 'w') as file:
-        pass
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
