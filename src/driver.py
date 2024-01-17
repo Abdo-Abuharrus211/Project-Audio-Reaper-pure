@@ -1,4 +1,7 @@
-import os, re, tinytag, csv
+import os
+import re
+import tinytag
+import csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -41,9 +44,9 @@ def parse_filename(file_name):
     """
     # Remove the file extension
     name, _ = os.path.splitext(file_name)
-    for delimiter in ['-', '_', '|', '', '(', ')', '[', ']', '&']:
+    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
         name = name.replace(delimiter, ' ')
-    parts = name.split(' ')
+    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
     return parts
 
 
@@ -227,9 +230,9 @@ def main():
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
     # Authenticate with Spotify API and instantiate a Spotify object
-    sp = spotipy.Spotify(
-        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8080/callback'
-                                  , scope='playlist-modify-public playlist-read-private'))
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret,
+                                                   redirect_uri='https://localhost:8080/callback'
+                                                   , scope='playlist-modify-public playlist-read-private'))
 
     target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
     playlist_name = input("Please enter the name of the playlist you would like to create:")
