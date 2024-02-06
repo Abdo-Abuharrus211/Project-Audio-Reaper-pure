@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, simpledialog
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -177,6 +177,7 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     return not_in_playlist, failed_tracks
 
 
+# TODO: move this part to a separate class and file
 def search_filename(sp, file_name):
     """
     Search for a song on Spotify using the file name.
