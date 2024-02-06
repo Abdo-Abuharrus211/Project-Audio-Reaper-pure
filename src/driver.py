@@ -5,6 +5,8 @@ import csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import tkinter as tk
+from tkinter import filedialog
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -77,7 +79,7 @@ def metadata_harvester(song_files):
                 if audio_file.title or audio_file.artist or audio_file.album:
                     metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
                 else:
-                    fail_file.write(file + '\n')
+                    fail_file.write(file + '\n') # TODO: clean up and remove path from the file name
 
     return metadata
 
@@ -223,6 +225,20 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
     return added_tracks
 
 
+def select_folder():
+    """
+    Prompt the user to select a folder.
+
+    :return: a string representing the path of the selected folder
+    """
+    root = tk.Tk()
+    root.withdraw()
+    folder_path = filedialog.askdirectory()
+    if not folder_path:
+        raise FileNotFoundError
+    return folder_path
+
+
 def main():
     # Retrieve environment variables
     load_dotenv()
@@ -234,7 +250,15 @@ def main():
                                                    redirect_uri='https://localhost:8080/callback'
                                                    , scope='playlist-modify-public playlist-read-private'))
 
-    target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
+    target_directory = ""
+    while not target_directory:
+        try:
+            target_directory = select_folder()
+        except FileNotFoundError:
+            print("No folder selected")
+        else:
+            print("Harvesting audio files from " + target_directory + "...")
+
     playlist_name = input("Please enter the name of the playlist you would like to create:")
     library_size = len(os.listdir(target_directory))
     print("Harvesting audio files..." + str(library_size))
