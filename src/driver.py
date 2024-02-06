@@ -132,11 +132,11 @@ def clean_metadata(title, artist):
     :return: a tuple of strings representing the cleaned title and artist
     """
     # Remove common extraneous information from titles
-    title = re.sub(r'\(.*\)|\[.*\]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
+    title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
     # Refine artist name
     artist = artist.split(',')[0]  # Take the first artist if there are multiple
-    artist = re.sub(r'\(.*\)|\[.*\]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
+    artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
     return title, artist
 
 
@@ -248,9 +248,9 @@ def main():
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
     # Authenticate with Spotify API and instantiate a Spotify object
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret,
-                                                   redirect_uri='https://localhost:8888/callback'
-                                                   , scope='playlist-modify-public playlist-read-private'))
+    sp = spotipy.Spotify(
+        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8888/callback',
+                                  scope='playlist-modify-public playlist-read-private'))
 
     target_directory = ""
     while not target_directory:
