@@ -1,4 +1,4 @@
-C:\Users\Abdulqadir Abuharrus\Documents\Programming Projects\Python Programs\Project Audio Reaper\testLibrary\Audioslave - Like A Stone.mp3
-C:\Users\Abdulqadir Abuharrus\Documents\Programming Projects\Python Programs\Project Audio Reaper\testLibrary\Scorpions - Still Loving You .mp3
-C:\Users\Abdulqadir Abuharrus\Documents\Programming Projects\Python Programs\Project Audio Reaper\testLibrary\The Witcher 3 One hour of Emotional and Relaxing Music.mp3
-C:\Users\Abdulqadir Abuharrus\Documents\Programming Projects\Python Programs\Project Audio Reaper\testLibrary\The Witcher 3 Wild Hunt - The Vagabond Music Extended.mp3
+The Witcher 3 One hour of Emotional and Relaxing Music.mp3
+The Witcher 3 Wild Hunt - The Vagabond Music Extended.mp3
+The Witcher 3 Wild Hunt OST - Soundtrack - White Orchard Theme ExtendedLooped.mp3
+The Witcher Official Teaser Music Netflix (Audiomachine - I Am the Shield).mp3

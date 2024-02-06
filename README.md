@@ -30,4 +30,4 @@ To create a playlist of these songs on Spotify.
 - [X] Consider wiping the CSV file after each use
 - [X] File browser??
 - [ ] GUI??
-- [ ] Consider using a database instead of a CSV file
+- [ ] ~~Consider using a database instead of a CSV file~~
