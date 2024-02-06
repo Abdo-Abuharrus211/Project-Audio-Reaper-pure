@@ -249,7 +249,7 @@ def main():
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret,
-                                                   redirect_uri='https://localhost:8080/callback'
+                                                   redirect_uri='https://localhost:8888/callback'
                                                    , scope='playlist-modify-public playlist-read-private'))
 
     target_directory = ""
