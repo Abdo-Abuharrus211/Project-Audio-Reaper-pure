@@ -28,6 +28,6 @@ To create a playlist of these songs on Spotify.
 - [ ] implement unit testing
 - [ ] Write documentation and instructions for use in the README.md file
 - [X] Consider wiping the CSV file after each use
-- [ ] File browser??
+- [X] File browser??
 - [ ] GUI??
 - [ ] Consider using a database instead of a CSV file
