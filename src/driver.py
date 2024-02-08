@@ -247,10 +247,11 @@ def main():
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+    redirect_uri = 'https://localhost:8888/callback'
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
-        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri='https://localhost:8888/callback',
+        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri,
                                   scope='playlist-modify-public playlist-read-private'))
 
     target_directory = ""
@@ -261,6 +262,9 @@ def main():
             print("No folder selected")
         else:
             print("Harvesting audio files from " + target_directory + "...")
+
+    ##after selecting a directory I get prompted to copy & paste the URI response from the browser into the terminal
+    # How can I automate that initial step so the user doesn't have to do it manually?
 
     playlist_name = input("Please enter the name of the playlist you would like to create:")
     library_size = len(os.listdir(target_directory))
