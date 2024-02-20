@@ -1,3 +1,4 @@
+import ntpath
 import os
 import re
 import tinytag
@@ -5,6 +6,8 @@ import csv
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import tkinter as tk
+from tkinter import filedialog, simpledialog
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -77,7 +80,8 @@ def metadata_harvester(song_files):
                 if audio_file.title or audio_file.artist or audio_file.album:
                     metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
                 else:
-                    fail_file.write(file + '\n')
+                    # fail_file.write(file + '\n') # TODO: clean up and remove path from the file name
+                    fail_file.write(ntpath.basename(file) + '\n')
 
     return metadata
 
@@ -128,11 +132,11 @@ def clean_metadata(title, artist):
     :return: a tuple of strings representing the cleaned title and artist
     """
     # Remove common extraneous information from titles
-    title = re.sub(r'\(.*\)|\[.*\]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
+    title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
     # Refine artist name
     artist = artist.split(',')[0]  # Take the first artist if there are multiple
-    artist = re.sub(r'\(.*\)|\[.*\]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
+    artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
     return title, artist
 
 
@@ -173,6 +177,7 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     return not_in_playlist, failed_tracks
 
 
+# TODO: move this part to a separate class and file
 def search_filename(sp, file_name):
     """
     Search for a song on Spotify using the file name.
@@ -223,18 +228,45 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
     return added_tracks
 
 
+def select_folder():
+    """
+    Prompt the user to select a folder.
+
+    :return: a string representing the path of the selected folder
+    """
+    root = tk.Tk()
+    root.withdraw()
+    folder_path = filedialog.askdirectory()
+    if not folder_path:
+        raise FileNotFoundError
+    return folder_path
+
+
 def main():
     # Retrieve environment variables
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+    redirect_uri = 'https://localhost:8888/callback'
 
     # Authenticate with Spotify API and instantiate a Spotify object
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret,
-                                                   redirect_uri='https://localhost:8080/callback'
-                                                   , scope='playlist-modify-public playlist-read-private'))
+    sp = spotipy.Spotify(
+        auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri,
+                                  scope='playlist-modify-public playlist-read-private',
+                                  open_browser=True))
 
-    target_directory = input("Please enter the absolute path of the directory you would like to harvest:")
+    target_directory = ""
+    while not target_directory:
+        try:
+            target_directory = select_folder()
+        except FileNotFoundError:
+            print("No folder selected")
+        else:
+            print("Harvesting audio files from " + target_directory + "...")
+
+    # after selecting a directory I get prompted to copy & paste the URI response from the browser into the terminal
+    # How can I automate that initial step so the user doesn't have to do it manually?
+
     playlist_name = input("Please enter the name of the playlist you would like to create:")
     library_size = len(os.listdir(target_directory))
     print("Harvesting audio files..." + str(library_size))
