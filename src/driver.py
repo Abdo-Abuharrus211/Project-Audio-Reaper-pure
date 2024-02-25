@@ -247,7 +247,7 @@ def main():
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-    redirect_uri = 'https://localhost:8888/callback'
+    redirect_uri = 'https://localhost:8888'
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
