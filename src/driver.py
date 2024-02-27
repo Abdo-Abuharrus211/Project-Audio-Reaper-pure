@@ -36,21 +36,21 @@ def csv_writer(playlist_name, metadata_list):
     return csv_file_path
 
 
-def parse_filename(file_name):
-    """
-    Parse the song file's name for relevant information to identify the song.
-
-    :param file_name: a string representing the file's name
-    :precondition: file_name must be a valid string
-    :postcondition: replace excess characters with spaces and split the string
-    :return: a substring containing only relevant information
-    """
-    # Remove the file extension
-    name, _ = os.path.splitext(file_name)
-    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
-        name = name.replace(delimiter, ' ')
-    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
-    return parts
+# def parse_filename(file_name):
+#     """
+#     Parse the song file's name for relevant information to identify the song.
+#
+#     :param file_name: a string representing the file's name
+#     :precondition: file_name must be a valid string
+#     :postcondition: replace excess characters with spaces and split the string
+#     :return: a substring containing only relevant information
+#     """
+#     # Remove the file extension
+#     name, _ = os.path.splitext(file_name)
+#     for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
+#         name = name.replace(delimiter, ' ')
+#     parts = [part for part in name.split(' ') if part]  # Filter out empty strings
+#     return parts
 
 
 def metadata_harvester(song_files):
