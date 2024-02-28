@@ -252,7 +252,7 @@ def main():
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
         auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri,
-                                  scope='playlist-modify-public playlist-read-private',
+                                  scope='playlist-modify-public playlist-modify-private playlist-read-private',
                                   open_browser=True))
 
     target_directory = ""
