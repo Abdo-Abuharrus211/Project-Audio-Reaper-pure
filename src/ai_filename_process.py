@@ -4,29 +4,42 @@ metadata and is often convulted and messy. So AI will be used to extract
 info from the file name and then search for it on Spotify.
 
 """
+import os
 
 
-def filename_parse():
+def parse_filename(file_name):
     """
-    This function will parse the file name and extract the song name, artist, and album name.
-    :return:
+    Parse the song file's name for relevant information to identify the song.
+
+    :param file_name: a string representing the file's name
+    :precondition: file_name must be a valid string
+    :postcondition: replace excess characters with spaces and split the string
+    :return: a substring containing only relevant information
     """
-    pass
+    # Remove the file extension
+    name, _ = os.path.splitext(file_name)
+    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
+        name = name.replace(delimiter, ' ')
+    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
+    return parts
 
 
-def process_filename():
-    """
-    This function will process the file name and remove any unnecessary characters.
-    :return:
-    """
-    pass
+# def process_filename():
+#     """
+#     This function will process the file name and remove any unnecessary characters.
+#     :return:
+#     """
+#     pass
+#
 
-
-def invoke_prompt_to_ai():
+def invoke_prompt_to_ai(file_name):
     """
     This function will invoke a prompt to the AI to extract the song's metadata.
     :return:
     """
+    prompt = ("Given filename '<filename>', provide only the metadata in the following format, including Title,"
+              " Artist, and Album. Use a comma to separate each field and leave blank if not specified. Format: Title: "
+              ", Artist: , Album:")
     pass
 
 

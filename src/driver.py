@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import tkinter as tk
-from tkinter import filedialog, simpledialog
+from tkinter import filedialog
 
 
 def csv_writer(playlist_name, metadata_list):
@@ -252,7 +252,7 @@ def main():
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
         auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri,
-                                  scope='playlist-modify-public playlist-read-private',
+                                  scope='playlist-modify-public playlist-modify-private playlist-read-private',
                                   open_browser=True))
 
     target_directory = ""
