@@ -32,3 +32,4 @@ To create a playlist of these songs on Spotify.
 - [ ] GUI??
 - [ ] ~~Consider using a database instead of a CSV file~~
 - [ ] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
+- [ ] Delete the CSV file after program execution

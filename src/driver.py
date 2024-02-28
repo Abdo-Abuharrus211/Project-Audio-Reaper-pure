@@ -36,21 +36,21 @@ def csv_writer(playlist_name, metadata_list):
     return csv_file_path
 
 
-# def parse_filename(file_name):
-#     """
-#     Parse the song file's name for relevant information to identify the song.
-#
-#     :param file_name: a string representing the file's name
-#     :precondition: file_name must be a valid string
-#     :postcondition: replace excess characters with spaces and split the string
-#     :return: a substring containing only relevant information
-#     """
-#     # Remove the file extension
-#     name, _ = os.path.splitext(file_name)
-#     for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
-#         name = name.replace(delimiter, ' ')
-#     parts = [part for part in name.split(' ') if part]  # Filter out empty strings
-#     return parts
+def parse_filename(file_name):
+    """
+    Parse the song file's name for relevant information to identify the song.
+
+    :param file_name: a string representing the file's name
+    :precondition: file_name must be a valid string
+    :postcondition: replace excess characters with spaces and split the string
+    :return: a substring containing only relevant information
+    """
+    # Remove the file extension
+    name, _ = os.path.splitext(file_name)
+    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
+        name = name.replace(delimiter, ' ')
+    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
+    return parts
 
 
 def metadata_harvester(song_files):
@@ -177,35 +177,35 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
     return not_in_playlist, failed_tracks
 
 
-# TODO: move this part to a separate class and file
-# def search_filename(sp, file_name):
-#     """
-#     Search for a song on Spotify using the file name.
-#
-#     :param sp: an authenticated Spotify object
-#     :param file_name: a string representing the file's name
-#     :precondition: file_name is a valid string
-#     :return: a string representing the track's id0
-#     """
-#     parts = parse_filename(file_name)
-#     best_match = None
-#     max_popularity = -1
-#
-#     # Try all combinations of parts as artist and title
-#     for i in range(1, len(parts)):
-#         artist = ' '.join(parts[:i])
-#         title = ' '.join(parts[i:])
-#         query = f'track:{title} artist:{artist}'
-#         result = sp.search(query, type='track', limit=1)
-#         tracks = result['tracks']['items']
-#         if tracks:
-#             track = tracks[0]
-#             # Select the track with the highest popularity
-#             if track['popularity'] > max_popularity:
-#                 best_match = track['id']
-#                 max_popularity = track['popularity']
-#
-#     return best_match
+# TODO: move this part to a separate class and file when other branches is ready
+def search_filename(sp, file_name):
+    """
+    Search for a song on Spotify using the file name.
+
+    :param sp: an authenticated Spotify object
+    :param file_name: a string representing the file's name
+    :precondition: file_name is a valid string
+    :return: a string representing the track's id0
+    """
+    parts = parse_filename(file_name)
+    best_match = None
+    max_popularity = -1
+
+    # Try all combinations of parts as artist and title
+    for i in range(1, len(parts)):
+        artist = ' '.join(parts[:i])
+        title = ' '.join(parts[i:])
+        query = f'track:{title} artist:{artist}'
+        result = sp.search(query, type='track', limit=1)
+        tracks = result['tracks']['items']
+        if tracks:
+            track = tracks[0]
+            # Select the track with the highest popularity
+            if track['popularity'] > max_popularity:
+                best_match = track['id']
+                max_popularity = track['popularity']
+
+    return best_match
 
 
 def add_songs_to_playlist(sp, playlist_id, track_ids):
@@ -219,12 +219,17 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
     :precondition: track_id is a valid non-empty list of strings
     :return: a list of songs added to the playlist
     """
+    if not track_ids:  # Check if the list is empty
+        print("No track IDs provided to add to the playlist.")
+        return []
+
     added_tracks = []
     batch_size = 100
     for i in range(0, len(track_ids), batch_size):
         batch = track_ids[i:i + batch_size]
-        sp.playlist_add_items(playlist_id, batch)
-        added_tracks.extend(batch)
+        if batch:  # Ensure batch is not empty
+            sp.playlist_add_items(playlist_id, batch)
+            added_tracks.extend(batch)
     return added_tracks
 
 
@@ -247,7 +252,7 @@ def main():
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-    redirect_uri = 'https://localhost:8888'
+    redirect_uri = 'https://localhost:8888/callback'
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
@@ -279,6 +284,7 @@ def main():
     playlist_id = get_or_create_playlist(sp, user_id, playlist_name)
 
     track_ids_not_in_playlist = search_songs_not_in_playlist(sp, playlist_id, csv_file_path)
+    print(track_ids_not_in_playlist[0])
     added_tracks = add_songs_to_playlist(sp, playlist_id, track_ids_not_in_playlist[0])
 
     print("========================================")
