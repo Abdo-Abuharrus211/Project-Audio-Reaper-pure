@@ -10,80 +10,80 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def csv_writer(playlist_name, metadata_list):
-    """
-    Write metadata to a CSV file that's named after the user's playlist.
-
-    :param: playlist_name: a string representing the name of the playlist as entered by the user
-    :param: metadata_list: a list of dictionaries containing the metadata of each audio file
-    :precondition: playlist_name is a string, metadata_list is a list of dictionaries
-    :postcondition: a CSV file is created in the 'metadata' directory
-    :return: a string for the path of the CSV file
-    """
-    current_directory_path = os.path.dirname(os.path.abspath(__file__))
-    parent_directory_path = os.path.dirname(current_directory_path)
-    metadata_directory_path = os.path.join(parent_directory_path, 'metadata')
-    if not os.path.exists(metadata_directory_path):
-        os.makedirs(metadata_directory_path)
-    csv_file_path = os.path.join(metadata_directory_path, playlist_name + '.csv')
-    # Create/Open the CSV file
-    with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        # If you have headers like 'title', 'artist', 'album', you can write them here:
-        # writer.writerow(['Title', 'Artist', 'Album'])
-        for file in metadata_list:
-            writer.writerow([file['title'], file['artist'], file['album']])
-    return csv_file_path
-
-
-def parse_filename(file_name):
-    """
-    Parse the song file's name for relevant information to identify the song.
-
-    :param file_name: a string representing the file's name
-    :precondition: file_name must be a valid string
-    :postcondition: replace excess characters with spaces and split the string
-    :return: a substring containing only relevant information
-    """
-    # Remove the file extension
-    name, _ = os.path.splitext(file_name)
-    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
-        name = name.replace(delimiter, ' ')
-    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
-    return parts
+# def csv_writer(playlist_name, metadata_list):
+#     """
+#     Write metadata to a CSV file that's named after the user's playlist.
+#
+#     :param: playlist_name: a string representing the name of the playlist as entered by the user
+#     :param: metadata_list: a list of dictionaries containing the metadata of each audio file
+#     :precondition: playlist_name is a string, metadata_list is a list of dictionaries
+#     :postcondition: a CSV file is created in the 'metadata' directory
+#     :return: a string for the path of the CSV file
+#     """
+#     current_directory_path = os.path.dirname(os.path.abspath(__file__))
+#     parent_directory_path = os.path.dirname(current_directory_path)
+#     metadata_directory_path = os.path.join(parent_directory_path, 'metadata')
+#     if not os.path.exists(metadata_directory_path):
+#         os.makedirs(metadata_directory_path)
+#     csv_file_path = os.path.join(metadata_directory_path, playlist_name + '.csv')
+#     # Create/Open the CSV file
+#     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
+#         writer = csv.writer(f)
+#         # If you have headers like 'title', 'artist', 'album', you can write them here:
+#         # writer.writerow(['Title', 'Artist', 'Album'])
+#         for file in metadata_list:
+#             writer.writerow([file['title'], file['artist'], file['album']])
+#     return csv_file_path
 
 
-def metadata_harvester(song_files):
-    """
-    Extract metadata (title, artist, & album) from song files.
+# def parse_filename(file_name):
+#     """
+#     Parse the song file's name for relevant information to identify the song.
+#
+#     :param file_name: a string representing the file's name
+#     :precondition: file_name must be a valid string
+#     :postcondition: replace excess characters with spaces and split the string
+#     :return: a substring containing only relevant information
+#     """
+#     # Remove the file extension
+#     name, _ = os.path.splitext(file_name)
+#     for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
+#         name = name.replace(delimiter, ' ')
+#     parts = [part for part in name.split(' ') if part]  # Filter out empty strings
+#     return parts
 
-    :param song_files: a list of MP3 and WAV files in the user specified directory
-    :precondition: list must be non-empty and contain strings representing file paths
-    :postcondition: extract necessary metadata from each file
-    :return: a list of dictionaries of the songs' metadate, each song has a dictionary
-    """
-    metadata = []
-    path_current_directory = os.path.dirname(os.path.abspath(__file__))
-    path_parent_directory = os.path.dirname(path_current_directory)
-    failure_directory = os.path.join(path_parent_directory, 'failure')
-    failure_file_path = os.path.join(failure_directory, 'metadataFail.txt')
-    if not song_files:
-        print("No audio files found in directory.")
-    else:
-        if not os.path.exists(failure_directory):
-            os.makedirs(failure_directory)
 
-        with open(failure_file_path, 'w', encoding='utf-8') as fail_file:
-            fail_file.truncate()
-            for file in song_files:
-                audio_file = tinytag.TinyTag.get(file)
-                if audio_file.title or audio_file.artist or audio_file.album:
-                    metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
-                else:
-                    # fail_file.write(file + '\n') # TODO: clean up and remove path from the file name
-                    fail_file.write(ntpath.basename(file) + '\n')
-
-    return metadata
+# def metadata_harvester(song_files):
+#     """
+#     Extract metadata (title, artist, & album) from song files.
+#
+#     :param song_files: a list of MP3 and WAV files in the user specified directory
+#     :precondition: list must be non-empty and contain strings representing file paths
+#     :postcondition: extract necessary metadata from each file
+#     :return: a list of dictionaries of the songs' metadate, each song has a dictionary
+#     """
+#     metadata = []
+#     path_current_directory = os.path.dirname(os.path.abspath(__file__))
+#     path_parent_directory = os.path.dirname(path_current_directory)
+#     failure_directory = os.path.join(path_parent_directory, 'failure')
+#     failure_file_path = os.path.join(failure_directory, 'metadataFail.txt')
+#     if not song_files:
+#         print("No audio files found in directory.")
+#     else:
+#         if not os.path.exists(failure_directory):
+#             os.makedirs(failure_directory)
+#
+#         with open(failure_file_path, 'w', encoding='utf-8') as fail_file:
+#             fail_file.truncate()
+#             for file in song_files:
+#                 audio_file = tinytag.TinyTag.get(file)
+#                 if audio_file.title or audio_file.artist or audio_file.album:
+#                     metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
+#                 else:
+#                     # fail_file.write(file + '\n') # TODO: clean up and remove path from the file name
+#                     fail_file.write(ntpath.basename(file) + '\n')
+#
+#     return metadata
 
 
 def file_finder(target_directory):
@@ -122,22 +122,22 @@ def get_or_create_playlist(sp, user_id, playlist_name):
     return new_playlist['id']
 
 
-def clean_metadata(title, artist):
-    """
-    Remove excess unwanted characters from a song's metadata.
-
-    :param title: a string representing the song's title
-    :param artist: a string representing the song's artist
-    :precondition: title and artist are valid strings
-    :return: a tuple of strings representing the cleaned title and artist
-    """
-    # Remove common extraneous information from titles
-    title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
-                   flags=re.I).strip()
-    # Refine artist name
-    artist = artist.split(',')[0]  # Take the first artist if there are multiple
-    artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
-    return title, artist
+# def clean_metadata(title, artist):
+#     """
+#     Remove excess unwanted characters from a song's metadata.
+#
+#     :param title: a string representing the song's title
+#     :param artist: a string representing the song's artist
+#     :precondition: title and artist are valid strings
+#     :return: a tuple of strings representing the cleaned title and artist
+#     """
+#     # Remove common extraneous information from titles
+#     title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
+#                    flags=re.I).strip()
+#     # Refine artist name
+#     artist = artist.split(',')[0]  # Take the first artist if there are multiple
+#     artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
+#     return title, artist
 
 
 def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):

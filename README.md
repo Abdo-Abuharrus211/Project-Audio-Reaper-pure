@@ -27,8 +27,10 @@ To create a playlist of these songs on Spotify.
 - [X] Add Docstrings and doctests (where applicable)
 - [ ] implement unit testing
 - [ ] Write documentation and instructions for use in the README.md file
-- [ ] Consider wiping the CSV file after each use
 - [X] File browser??
 - [ ] GUI??
 - [ ] ~~Consider using a database instead of a CSV file~~
 - [ ] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
+- [ ] Ensure wiping the failure file before each run
+- [ ] delete the metadata CSV file after each run
+- 

@@ -14,6 +14,8 @@ def main():
                                   scope='playlist-modify-public playlist-modify-private playlist-read-private',
                                   open_browser=True))
 
+    # After auth then start calling the functions to execute program
+
 
 if __name__ == "__main__":
     main()
