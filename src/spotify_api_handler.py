@@ -34,7 +34,7 @@ def get_or_create_playlist(sp, user_id, playlist_name):
 
 def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
     """
-    Search for songs in the list of song metadata and return a list of songs not in the playlist
+    Search for songs in the list of song metadata dictionaries and return a list of songs not in the playlist
             and a list of songs not found on Spotify.
 
     :param sp: authenticated Spotify object

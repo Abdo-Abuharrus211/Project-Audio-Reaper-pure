@@ -120,3 +120,5 @@ def csv_writer(metadata_list):
             writer.writerow([file['title'], file['artist'], file['album']])
     return csv_file_path
 
+
+print(metadata_harvester(media_file_finder(select_folder()))[0])

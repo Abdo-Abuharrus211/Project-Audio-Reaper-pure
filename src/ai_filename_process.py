@@ -6,6 +6,8 @@ info from the file name and then search for it on Spotify.
 """
 import os
 from openai import OpenAI
+
+# this authenticates by auto retrieving the API key
 client = OpenAI()
 
 
@@ -16,11 +18,12 @@ def invoke_prompt_to_ai(file_names):
         :param: file_names: a list of strings representing the filenames of songs
         :return:
         """
+    extracted_metadata = []
     for name in file_names:
-        prompt = ("Given filename %s, provide only the metadata in the following format, including Title,"
-                  " Artist, and Album. Use a comma to separate each field "
-                  "and leave blank if not specified.Format: Title: , Artist: , Album:" % name)
-    pass
+        prompt = ("Given filename %s, provide only the metadata in the following format: "
+                  "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
+                  "Leave blank if not specified." % name)
+    return extracted_metadata
 
 
 def process_prompt_result():
