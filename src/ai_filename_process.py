@@ -20,14 +20,23 @@ def invoke_prompt_to_ai(file_names):
         """
     extracted_metadata = []
     for name in file_names:
-        prompt = ("Given filename %s, provide only the metadata in the following format: "
+        prompt = (f"Given filename %s, provide only the metadata in the following format: "
                   "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
                   "Leave blank if not specified." % name)
 
         # TODO: invoke the AI to process the prompt
-        response = client.complete(prompt)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo-0125",
+            messages=[prompt]
+        )
+
+        print(response.choices[0].message)
+
         extracted_metadata.append(response)
     return extracted_metadata
+
+
+
 
 
 def process_prompt_result():
@@ -36,6 +45,23 @@ def process_prompt_result():
         :return:
         """
     pass
+
+# Sample list of song filenames to test the function
+dummy_file_names = [
+    "ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3",
+    "Billie Jean - Michael Jackson.mp3",
+    "AudioSlave - Like a Stone.mp3",
+    "Nirvana - Smells Like Teen Spirit.mp3",
+    "Led Zeppelin - Stairway to Heaven.mp3"
+]
+
+# Call the function with the dummy data
+metadata_results = invoke_prompt_to_ai(dummy_file_names)
+
+# Print the results to see the extracted metadata
+for result in metadata_results:
+    print(result)
+
 
 # TODO: Remove These old functions after testing only
 
