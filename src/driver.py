@@ -80,7 +80,7 @@ from tkinter import filedialog
 #                 if audio_file.title or audio_file.artist or audio_file.album:
 #                     metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
 #                 else:
-#                     # fail_file.write(file + '\n') # TODO: clean up and remove path from the file name
+#                     # fail_file.write(file + '\n')
 #                     fail_file.write(ntpath.basename(file) + '\n')
 #
 #     return metadata
@@ -98,28 +98,28 @@ def file_finder(target_directory):
     for file in os.listdir(target_directory):
         if file.endswith(".mp3") or file.endswith(".wav"):
             full_path = os.path.join(target_directory, file)  # Add this line
-            audio_files.append(full_path)
+            audio_files.append(full_path)def get_or_create_playlist(sp, user_id, playlist_name):
+#     """
+#     Retrieve user's Spotify playlist if it exists, otherwise create one.
+#
+#     :param sp: authenticated Spotify object
+#     :param user_id: The user's Spotify ID
+#     :param playlist_name: the name of the playlist
+#     :precondition: user_id and playlist_name are valid strings
+#     :postcondition: either get the playlist's id or create a new one and get its id
+#     :return: the playlist's id
+#     """
+#     playlists = sp.current_user_playlists()
+#     for playlist in playlists['items']:
+#         if playlist['name'] == playlist_name:
+#             return playlist['id']
+#
+#     new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
+#     return new_playlist['id']
     return audio_files
 
 
-def get_or_create_playlist(sp, user_id, playlist_name):
-    """
-    Retrieve user's Spotify playlist if it exists, otherwise create one.
-
-    :param sp: authenticated Spotify object
-    :param user_id: The user's Spotify ID
-    :param playlist_name: the name of the playlist
-    :precondition: user_id and playlist_name are valid strings
-    :postcondition: either get the playlist's id or create a new one and get its id
-    :return: the playlist's id
-    """
-    playlists = sp.current_user_playlists()
-    for playlist in playlists['items']:
-        if playlist['name'] == playlist_name:
-            return playlist['id']
-
-    new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
-    return new_playlist['id']
+#
 
 
 # def clean_metadata(title, artist):
@@ -140,41 +140,41 @@ def get_or_create_playlist(sp, user_id, playlist_name):
 #     return title, artist
 
 
-def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
-    """
-    Search for songs in the CSV file after checking they're not in the playlist.
-
-    :param sp: authenticated Spotify object
-    :param playlist_id: a string representing the playlist's id
-    :param csv_file_path: a string representing the path to the CSV file
-    :precondition: playlist_id and csv_file_path are valid strings
-    :return: a tuple of lists, the first list contains the track ids of songs not in the playlist, and the second list
-    contains the titles of songs that could not be found on Spotify
-    """
-    not_in_playlist = []
-    existing_track_ids = set()
-    failed_tracks = []
-
-    results = sp.playlist_items(playlist_id)
-    for item in results['items']:
-        track = item['track']
-        existing_track_ids.add(track['id'])
-
-    with open(csv_file_path, 'r', encoding='utf-8') as csv_file:
-        csv_reader = csv.reader(csv_file)
-        for row in csv_reader:
-            # Clean up metadata before search
-            clean_title, clean_artist = clean_metadata(row[0], row[1])
-            query = f"track:{clean_title} artist:{clean_artist}"
-            result = sp.search(query, type='track', limit=1)
-            tracks = result['tracks']['items']
-            if tracks and tracks[0]['id'] not in existing_track_ids:
-                not_in_playlist.append(tracks[0]['id'])
-            elif not tracks:
-                failed_tracks.append(f"{clean_title} by {clean_artist}")
-                print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
-
-    return not_in_playlist, failed_tracks
+# def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
+#     """
+#     Search for songs in the CSV file after checking they're not in the playlist.
+#
+#     :param sp: authenticated Spotify object
+#     :param playlist_id: a string representing the playlist's id
+#     :param csv_file_path: a string representing the path to the CSV file
+#     :precondition: playlist_id and csv_file_path are valid strings
+#     :return: a tuple of lists, the first list contains the track ids of songs not in the playlist, and the second list
+#     contains the titles of songs that could not be found on Spotify
+#     """
+#     not_in_playlist = []
+#     existing_track_ids = set()
+#     failed_tracks = []
+#
+#     results = sp.playlist_items(playlist_id)
+#     for item in results['items']:
+#         track = item['track']
+#         existing_track_ids.add(track['id'])
+#
+#     with open(csv_file_path, 'r', encoding='utf-8') as csv_file:
+#         csv_reader = csv.reader(csv_file)
+#         for row in csv_reader:
+#             # Clean up metadata before search
+#             clean_title, clean_artist = clean_metadata(row[0], row[1])
+#             query = f"track:{clean_title} artist:{clean_artist}"
+#             result = sp.search(query, type='track', limit=1)
+#             tracks = result['tracks']['items']
+#             if tracks and tracks[0]['id'] not in existing_track_ids:
+#                 not_in_playlist.append(tracks[0]['id'])
+#             elif not tracks:
+#                 failed_tracks.append(f"{clean_title} by {clean_artist}")
+#                 print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
+#
+#     return not_in_playlist, failed_tracks
 
 
 # TODO: move this part to a separate class and file
@@ -208,24 +208,24 @@ def search_songs_not_in_playlist(sp, playlist_id, csv_file_path):
 #     return best_match
 
 
-def add_songs_to_playlist(sp, playlist_id, track_ids):
-    """
-    Add songs to the Spotify playlist in batches of 100 songs at a time.
-
-    :param sp: an authenticated Spotify object
-    :param playlist_id: a string representing the playlist's IDs
-    :param track_ids: a list of strings representing song IDs
-    :precondition: playlist_id is a valid string
-    :precondition: track_id is a valid non-empty list of strings
-    :return: a list of songs added to the playlist
-    """
-    added_tracks = []
-    batch_size = 100
-    for i in range(0, len(track_ids), batch_size):
-        batch = track_ids[i:i + batch_size]
-        sp.playlist_add_items(playlist_id, batch)
-        added_tracks.extend(batch)
-    return added_tracks
+# def add_songs_to_playlist(sp, playlist_id, track_ids):
+#     """
+#     Add songs to the Spotify playlist in batches of 100 songs at a time.
+#
+#     :param sp: an authenticated Spotify object
+#     :param playlist_id: a string representing the playlist's IDs
+#     :param track_ids: a list of strings representing song IDs
+#     :precondition: playlist_id is a valid string
+#     :precondition: track_id is a valid non-empty list of strings
+#     :return: a list of songs added to the playlist
+#     """
+#     added_tracks = []
+#     batch_size = 100
+#     for i in range(0, len(track_ids), batch_size):
+#         batch = track_ids[i:i + batch_size]
+#         sp.playlist_add_items(playlist_id, batch)
+#         added_tracks.extend(batch)
+#     return added_tracks
 
 
 def select_folder():

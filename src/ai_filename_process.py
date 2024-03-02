@@ -5,50 +5,32 @@ info from the file name and then search for it on Spotify.
 
 """
 import os
+from openai import OpenAI
+client = OpenAI()
 
 
-def parse_filename(file_name):
+def invoke_prompt_to_ai(file_names):
     """
-    Parse the song file's name for relevant information to identify the song.
+        This function will invoke a prompt to the AI to extract the song's metadata from the filenames.
 
-    :param file_name: a string representing the file's name
-    :precondition: file_name must be a valid string
-    :postcondition: replace excess characters with spaces and split the string
-    :return: a substring containing only relevant information
-    """
-    # Remove the file extension
-    name, _ = os.path.splitext(file_name)
-    for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
-        name = name.replace(delimiter, ' ')
-    parts = [part for part in name.split(' ') if part]  # Filter out empty strings
-    return parts
-
-
-# def process_filename():
-#     """
-#     This function will process the file name and remove any unnecessary characters.
-#     :return:
-#     """
-#     pass
-#
-
-def invoke_prompt_to_ai(file_name):
-    """
-    This function will invoke a prompt to the AI to extract the song's metadata.
-    :return:
-    """
-    prompt = ("Given filename '<filename>', provide only the metadata in the following format, including Title,"
-              " Artist, and Album. Use a comma to separate each field and leave blank if not specified. Format: Title: "
-              ", Artist: , Album:")
+        :param: file_names: a list of strings representing the filenames of songs
+        :return:
+        """
+    for name in file_names:
+        prompt = ("Given filename %s, provide only the metadata in the following format, including Title,"
+                  " Artist, and Album. Use a comma to separate each field "
+                  "and leave blank if not specified.Format: Title: , Artist: , Album:" % name)
     pass
 
 
 def process_prompt_result():
     """
-    This function will process the result from the prompt and format the result.
-    :return:
-    """
+        This function will process the result from the prompt and format the result.
+        :return:
+        """
     pass
+
+# TODO: Remove These old functions after testing only
 
 # def search_filename(sp, file_name):
 #     """
@@ -78,3 +60,19 @@ def process_prompt_result():
 #                 max_popularity = track['popularity']
 #
 #     return best_match
+
+# def parse_filename(file_name):
+#     """
+#     Parse the song file's name for relevant information to identify the song.
+#
+#     :param file_name: a string representing the file's name
+#     :precondition: file_name must be a valid string
+#     :postcondition: replace excess characters with spaces and split the string
+#     :return: a substring containing only relevant information
+#     """
+#     # Remove the file extension
+#     name, _ = os.path.splitext(file_name)
+#     for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
+#         name = name.replace(delimiter, ' ')
+#     parts = [part for part in name.split(' ') if part]  # Filter out empty strings
+#     return parts

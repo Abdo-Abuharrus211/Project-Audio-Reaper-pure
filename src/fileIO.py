@@ -61,27 +61,18 @@ def metadata_harvester(song_files):
              and album keys and their respective values
     """
     metadata = []
-    path_current_directory = os.path.dirname(os.path.abspath(__file__))
-    path_parent_directory = os.path.dirname(path_current_directory)
-    failure_directory = os.path.join(path_parent_directory, 'failure')
-    failure_file_path = os.path.join(failure_directory, 'metadataFail.txt')
+    file_names = []
     if not song_files:
         print("No audio files found in directory.")
     else:
-        if not os.path.exists(failure_directory):
-            os.makedirs(failure_directory)
+        for file in song_files:
+            audio_file = tinytag.TinyTag.get(file)
+            if audio_file.title or audio_file.artist or audio_file.album:
+                metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
+            else:
+                file_names.append(ntpath.basename(file))
 
-        with open(failure_file_path, 'w', encoding='utf-8') as fail_file:
-            fail_file.truncate()
-            for file in song_files:
-                audio_file = tinytag.TinyTag.get(file)
-                if audio_file.title or audio_file.artist or audio_file.album:
-                    metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
-                else:
-                    # fail_file.write(file + '\n')
-                    fail_file.write(ntpath.basename(file) + '\n')
-
-    return metadata
+    return metadata, file_names
 
 
 def clean_metadata(title, artist):
@@ -102,7 +93,7 @@ def clean_metadata(title, artist):
     return title, artist
 
 
-# TODO: refactor to eliminate the need for playlist name, treat the file like a cache
+# TODO: this is now redundant, remove later after testing only!
 def csv_writer(metadata_list):
     """
     Write metadata to a CSV file that's named after the user's playlist.
@@ -128,3 +119,4 @@ def csv_writer(metadata_list):
         for file in metadata_list:
             writer.writerow([file['title'], file['artist'], file['album']])
     return csv_file_path
+
