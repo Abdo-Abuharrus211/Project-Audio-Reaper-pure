@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-from src.fileIO import select_folder
+from src.fileIO import select_folder, media_file_finder, metadata_harvester
 
 
 def main():
@@ -41,7 +41,8 @@ def main():
     6. Add the songs to the playlist (if they're not already on there)
     7. Organise how everything is called and setup the control flow
     """
-
+    audio_files = media_file_finder(target_directory)
+    metadata, files_without_metadata = metadata_harvester(audio_files)
 
 if __name__ == "__main__":
     main()
