@@ -23,6 +23,10 @@ def invoke_prompt_to_ai(file_names):
         prompt = ("Given filename %s, provide only the metadata in the following format: "
                   "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
                   "Leave blank if not specified." % name)
+
+        # TODO: invoke the AI to process the prompt
+        response = client.complete(prompt)
+        extracted_metadata.append(response)
     return extracted_metadata
 
 
