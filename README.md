@@ -30,7 +30,8 @@ To create a playlist of these songs on Spotify.
 - [X] File browser??
 - [ ] GUI??
 - [ ] ~~Consider using a database instead of a CSV file~~
-- [ ] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
-- [ ] Ensure wiping the failure file before each run
-- [ ] delete the metadata CSV file after each run
+- [X] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
+- [ ] ~~Ensure wiping the failure file before each run~~
+- [ ] ~~delete the metadata CSV file after each run~~
+- [ ] OpenAI API rate limit handling
 - 

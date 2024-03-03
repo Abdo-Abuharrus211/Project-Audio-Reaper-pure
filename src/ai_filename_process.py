@@ -5,10 +5,15 @@ info from the file name and then search for it on Spotify.
 
 """
 import os
+
+from dotenv import load_dotenv
 from openai import OpenAI
 
 # this authenticates by auto retrieving the API key
-client = OpenAI()
+load_dotenv()
+client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY'),
+)
 
 
 def invoke_prompt_to_ai(file_names):
@@ -36,9 +41,6 @@ def invoke_prompt_to_ai(file_names):
     return extracted_metadata
 
 
-
-
-
 def process_prompt_result():
     """
         This function will process the result from the prompt and format the result.
@@ -46,13 +48,15 @@ def process_prompt_result():
         """
     pass
 
+# TODO: implement failsafe and contingency for when rate limit is reached
+
 # Sample list of song filenames to test the function
 dummy_file_names = [
     "ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3",
     "Billie Jean - Michael Jackson.mp3",
     "AudioSlave - Like a Stone.mp3",
     "Nirvana - Smells Like Teen Spirit.mp3",
-    "Led Zeppelin - Stairway to Heaven.mp3"
+    "Led Zeppelin - Led Zeppelin IV Stairway to Heaven.mp3"
 ]
 
 # Call the function with the dummy data
@@ -61,7 +65,6 @@ metadata_results = invoke_prompt_to_ai(dummy_file_names)
 # Print the results to see the extracted metadata
 for result in metadata_results:
     print(result)
-
 
 # TODO: Remove These old functions after testing only
 
