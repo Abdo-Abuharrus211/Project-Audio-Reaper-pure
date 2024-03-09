@@ -23,22 +23,30 @@ def invoke_prompt_to_ai(file_names):
         :param: file_names: a list of strings representing the filenames of songs
         :return:
         """
-    extracted_metadata = []
+    ai_responses = []
     for name in file_names:
-        prompt = (f"Given filename %s, provide only the metadata in the following format: "
-                  "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
-                  "Leave blank if not specified." % name)
+        # prompt = (f"Given filename %s, provide only the metadata in the following format: "
+        #           "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
+        #           "Leave blank if not specified." % name)
 
-        # TODO: invoke the AI to process the prompt
+        prompt = (
+            f"The filename is: '{name}'. Please extract the metadata from this filename and provide it in the following "
+            "format: {'Title': <title>, 'Artist': <artist>, 'Album': <album> }. If any information is not available,"
+            " leave it blank.")
+        # invoke the AI to process the prompt
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
-            messages=[prompt]
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=60,
         )
 
-        print(response.choices[0].message)
+        response_text = response.choices[0].message.content.strip()
+        ai_responses.append(response_text)
 
-        extracted_metadata.append(response)
-    return extracted_metadata
+    return ai_responses
 
 
 def process_prompt_result():
@@ -46,25 +54,18 @@ def process_prompt_result():
         This function will process the result from the prompt and format the result.
         :return:
         """
+    # TODO: parse AI JSON response and return the metadata in a list of dictionaries
     pass
+
 
 # TODO: implement failsafe and contingency for when rate limit is reached
 
 # Sample list of song filenames to test the function
-dummy_file_names = [
-    "ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3",
-    "Billie Jean - Michael Jackson.mp3",
-    "AudioSlave - Like a Stone.mp3",
-    "Nirvana - Smells Like Teen Spirit.mp3",
-    "Led Zeppelin - Led Zeppelin IV Stairway to Heaven.mp3"
-]
+dummy_file_name = ["ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3"]
+# "AudioSlave - Like a Stone - AudioSlave.mp3",
+# "Led Zeppelin - Led Zeppelin IV Stairway to Heaven.mp3"
 
-# Call the function with the dummy data
-metadata_results = invoke_prompt_to_ai(dummy_file_names)
-
-# Print the results to see the extracted metadata
-for result in metadata_results:
-    print(result)
+print(invoke_prompt_to_ai(dummy_file_name))
 
 # TODO: Remove These old functions after testing only
 

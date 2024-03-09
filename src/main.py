@@ -44,5 +44,6 @@ def main():
     audio_files = media_file_finder(target_directory)
     metadata, files_without_metadata = metadata_harvester(audio_files)
 
+
 if __name__ == "__main__":
     main()
