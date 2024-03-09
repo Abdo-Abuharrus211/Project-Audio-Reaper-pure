@@ -117,8 +117,11 @@ def csv_writer(metadata_list):
         # If you have headers like 'title', 'artist', 'album', you can write them here:
         # writer.writerow(['Title', 'Artist', 'Album'])
         for file in metadata_list:
-            writer.writerow([file['title'], file['artist'], file['album']])
+            writer.writerow([file['Title'], file['Artist'], file['Album']])
     return csv_file_path
 
 
-print(metadata_harvester(media_file_finder(select_folder()))[0])
+# stuff = metadata_harvester(media_file_finder(select_folder()))
+# for x in stuff[0]: print(x)
+# print("==========\nNo metadata songs:")
+# for x in stuff[1]: print(x)
