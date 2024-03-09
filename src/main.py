@@ -36,7 +36,7 @@ def main():
     1. pass the playlist name to check for it on spotify
     2. Read the metadata from the audio files
     3. Prompt the AI to read the filename and extract the metadata
-    4. add them to the list of metadata tooo
+    4. add them (join both lists of dict) to the list of metadata
     5. Search for the songs on Spotify
     6. Add the songs to the playlist (if they're not already on there)
     7. Organise how everything is called and setup the control flow

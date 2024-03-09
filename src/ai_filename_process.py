@@ -8,6 +8,7 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
+import json
 
 # this authenticates by auto retrieving the API key
 load_dotenv()
@@ -21,95 +22,53 @@ def invoke_prompt_to_ai(file_names):
         This function will invoke a prompt to the AI to extract the song's metadata from the filenames.
 
         :param: file_names: a list of strings representing the filenames of songs
+        :precondition: file_names is a valid none-empty list of strings
         :return:
         """
+
+    # TODO: implement failsafe and contingency for when rate limit is reached
     ai_responses = []
-    for name in file_names:
-        # prompt = (f"Given filename %s, provide only the metadata in the following format: "
-        #           "{ 'Title': <title>, 'Artist': <artist>, 'Album': <album> }. "
-        #           "Leave blank if not specified." % name)
+    if len(file_names) > 0:
+        for name in file_names:
+            prompt = f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
+                     f" and Album with commas, and leave blank if not specified. Don't label fields" \
+                     f" and Say nothing else."
+            response = client.chat.completions.create(
+                model="gpt-4-0125-preview",
+                messages=[
+                    {"role": "system", "content": "You are a metadata extractor assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=60,
+            )
 
-        prompt = (
-            f"The filename is: '{name}'. Please extract the metadata from this filename and provide it in the following "
-            "format: {'Title': <title>, 'Artist': <artist>, 'Album': <album> }. If any information is not available,"
-            " leave it blank.")
-        # invoke the AI to process the prompt
-        response = client.chat.completions.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=60,
-        )
-
-        response_text = response.choices[0].message.content.strip()
-        ai_responses.append(response_text)
+            response_text = response.choices[0].message.content.strip()
+            ai_responses.append(response_text)
+            # print(response_text)
 
     return ai_responses
 
 
-def process_prompt_result():
+def process_prompt_result(prompt_results):
     """
         This function will process the result from the prompt and format the result.
         :return:
         """
-    # TODO: parse AI JSON response and return the metadata in a list of dictionaries
-    pass
+    metadata = []
+    for res in prompt_results:
+        segmented_text = res.split(",")
+        song_dict = {"Title": segmented_text[0], "Artist": segmented_text[1], "Album": segmented_text[2]}
+        metadata.append(song_dict)
+    return metadata
 
 
-# TODO: implement failsafe and contingency for when rate limit is reached
-
-# Sample list of song filenames to test the function
-dummy_file_name = ["ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3"]
-# "AudioSlave - Like a Stone - AudioSlave.mp3",
-# "Led Zeppelin - Led Zeppelin IV Stairway to Heaven.mp3"
-
-print(invoke_prompt_to_ai(dummy_file_name))
-
-# TODO: Remove These old functions after testing only
-
-# def search_filename(sp, file_name):
-#     """
-#     Search for a song on Spotify using the file name.
+# # Sample list of song filenames to test the function
+# dummy_file_names = ["ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3",
+#                     "AudioSlave - Like a Stone - AudioSlave.mp3",
+#                     "Led Zeppelin - Led Zeppelin IV Stairway to Heaven.mp3"]
 #
-#     :param sp: an authenticated Spotify object
-#     :param file_name: a string representing the file's name
-#     :precondition: file_name is a valid string
-#     :return: a string representing the track's id0
-#     """
-#     parts = parse_filename(file_name)
-#     best_match = None
-#     max_popularity = -1
+# example = invoke_prompt_to_ai(dummy_file_names)
+# stuff = process_prompt_result(example)
 #
-#     # Try all combinations of parts as artist and title
-#     for i in range(1, len(parts)):
-#         artist = ' '.join(parts[:i])
-#         title = ' '.join(parts[i:])
-#         query = f'track:{title} artist:{artist}'
-#         result = sp.search(query, type='track', limit=1)
-#         tracks = result['tracks']['items']
-#         if tracks:
-#             track = tracks[0]
-#             # Select the track with the highest popularity
-#             if track['popularity'] > max_popularity:
-#                 best_match = track['id']
-#                 max_popularity = track['popularity']
-#
-#     return best_match
-
-# def parse_filename(file_name):
-#     """
-#     Parse the song file's name for relevant information to identify the song.
-#
-#     :param file_name: a string representing the file's name
-#     :precondition: file_name must be a valid string
-#     :postcondition: replace excess characters with spaces and split the string
-#     :return: a substring containing only relevant information
-#     """
-#     # Remove the file extension
-#     name, _ = os.path.splitext(file_name)
-#     for delimiter in ['-', '_', '|', '(', ')', '[', ']', '&']:
-#         name = name.replace(delimiter, ' ')
-#     parts = [part for part in name.split(' ') if part]  # Filter out empty strings
-#     return parts
+# for som in stuff:
+#     print(som)
