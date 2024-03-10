@@ -65,7 +65,7 @@ from tkinter import filedialog
 #     metadata = []
 #     path_current_directory = os.path.dirname(os.path.abspath(__file__))
 #     path_parent_directory = os.path.dirname(path_current_directory)
-#     failure_directory = os.path.join(path_parent_directory, 'failure')
+#     failure_directory = os.path.join(path_parent_directory, 'failures')
 #     failure_file_path = os.path.join(failure_directory, 'metadataFail.txt')
 #     if not song_files:
 #         print("No audio files found in directory.")

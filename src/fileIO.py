@@ -67,7 +67,7 @@ def metadata_harvester(song_files):
     else:
         for file in song_files:
             audio_file = tinytag.TinyTag.get(file)
-            if audio_file.title or audio_file.artist or audio_file.album:
+            if audio_file.title and audio_file.artist:
                 metadata.append({'Title': audio_file.title, 'Artist': audio_file.artist, 'Album': audio_file.album})
             else:
                 file_names.append(ntpath.basename(file))
@@ -89,7 +89,7 @@ def clean_metadata(title, artist):
                    flags=re.I).strip()
     # Refine artist name
     if artist is None:
-        artist = 'Unknown Artist'
+        artist = ""
     else:
         artist = artist.split(',')[0]  # Take the first artist if there are multiple
     artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
@@ -97,31 +97,26 @@ def clean_metadata(title, artist):
 
 
 # TODO: this is now redundant, remove later after testing only!
-def csv_writer(metadata_list):
+def failed_csv_writer(items):
     """
-    Write metadata to a CSV file that's named after the user's playlist.
+    Write songs that failed to a CSV file.
 
-    :param: playlist_name: a string representing the name of the playlist as entered by the user
-    :param: metadata_list: a list of dictionaries containing the metadata of each audio file
-    :precondition: playlist_name is a string, metadata_list is a list of dictionaries
+    :param: items: a list of strings representing songs not failed to find on Spotify
     :postcondition: a CSV file is created in the 'metadata' directory
     :return: a string for the path of the CSV file
     """
-    csv_filename = "metadata"
+    csv_filename = "failures"
     current_directory_path = os.path.dirname(os.path.abspath(__file__))
     parent_directory_path = os.path.dirname(current_directory_path)
-    metadata_directory_path = os.path.join(parent_directory_path, 'metadata')
-    if not os.path.exists(metadata_directory_path):
-        os.makedirs(metadata_directory_path)
-    csv_file_path = os.path.join(metadata_directory_path, csv_filename + '.csv')
-    # Create/Open the CSV file
+    failures_directory_path = os.path.join(parent_directory_path, 'failures')
+    if not os.path.exists(failures_directory_path):
+        os.makedirs(failures_directory_path)
+    csv_file_path = os.path.join(failures_directory_path, csv_filename + '.csv')
+
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        # If you have headers like 'title', 'artist', 'album', you can write them here:
-        # writer.writerow(['Title', 'Artist', 'Album'])
-        for file in metadata_list:
-            writer.writerow([file['Title'], file['Artist'], file['Album']])
-    return csv_file_path
+        for _ in items:
+            writer.writerow(_)
 
 # stuff = metadata_harvester(media_file_finder(select_folder()))
 # for x in stuff[0]: print(x)

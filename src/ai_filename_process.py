@@ -44,7 +44,7 @@ def invoke_prompt_to_ai(file_names):
 
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
-            # print(response_text)
+            print(response_text)
 
     return ai_responses
 
