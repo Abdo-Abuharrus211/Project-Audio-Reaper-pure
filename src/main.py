@@ -37,7 +37,6 @@ def main():
     metadata, files_without_metadata = metadata_harvester(audio_files)
     print("The following files have no metadata:", files_without_metadata)
     filename_data = process_prompt_result(invoke_prompt_to_ai(files_without_metadata))
-    print(filename_data)
     metadata.extend(filename_data)
     playlist_id = get_or_create_playlist(sp, sp.current_user()['id'], playlist_name)
 

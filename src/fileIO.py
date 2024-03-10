@@ -105,7 +105,7 @@ def failed_csv_writer(items):
     :postcondition: a CSV file is created in the 'metadata' directory
     :return: a string for the path of the CSV file
     """
-    csv_filename = "failures"
+    csv_filename = "failed_tracks"
     current_directory_path = os.path.dirname(os.path.abspath(__file__))
     parent_directory_path = os.path.dirname(current_directory_path)
     failures_directory_path = os.path.join(parent_directory_path, 'failures')
@@ -116,7 +116,7 @@ def failed_csv_writer(items):
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         for _ in items:
-            writer.writerow(_)
+            writer.writerow([_])
 
 # stuff = metadata_harvester(media_file_finder(select_folder()))
 # for x in stuff[0]: print(x)
