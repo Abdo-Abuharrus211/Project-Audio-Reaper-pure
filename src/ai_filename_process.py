@@ -44,7 +44,7 @@ def invoke_prompt_to_ai(file_names):
 
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
-            print(response_text)
+            # print(response_text)
 
     return ai_responses
 
@@ -60,7 +60,6 @@ def process_prompt_result(prompt_results):
         song_dict = {"Title": segmented_text[0], "Artist": segmented_text[1], "Album": segmented_text[2]}
         metadata.append(song_dict)
     return metadata
-
 
 # # Sample list of song filenames to test the function
 # dummy_file_names = ["ACDC - It's A Long Way To The Top (If You Wanna Rock 'n' Roll).mp3",
