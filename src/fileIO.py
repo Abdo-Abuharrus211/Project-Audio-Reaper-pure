@@ -68,7 +68,7 @@ def metadata_harvester(song_files):
         for file in song_files:
             audio_file = tinytag.TinyTag.get(file)
             if audio_file.title or audio_file.artist or audio_file.album:
-                metadata.append({'title': audio_file.title, 'artist': audio_file.artist, 'album': audio_file.album})
+                metadata.append({'Title': audio_file.title, 'Artist': audio_file.artist, 'Album': audio_file.album})
             else:
                 file_names.append(ntpath.basename(file))
 
@@ -88,7 +88,10 @@ def clean_metadata(title, artist):
     title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
     # Refine artist name
-    artist = artist.split(',')[0]  # Take the first artist if there are multiple
+    if artist is None:
+        artist = 'Unknown Artist'
+    else:
+        artist = artist.split(',')[0]  # Take the first artist if there are multiple
     artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
     return title, artist
 
@@ -119,7 +122,6 @@ def csv_writer(metadata_list):
         for file in metadata_list:
             writer.writerow([file['Title'], file['Artist'], file['Album']])
     return csv_file_path
-
 
 # stuff = metadata_harvester(media_file_finder(select_folder()))
 # for x in stuff[0]: print(x)

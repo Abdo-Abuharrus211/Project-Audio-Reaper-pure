@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
+from src.ai_filename_process import process_prompt_result, invoke_prompt_to_ai
 from src.fileIO import select_folder, media_file_finder, metadata_harvester
+from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist
 
 
 def main():
@@ -32,17 +34,20 @@ def main():
     library_size = len(os.listdir(target_directory))
     print(f"Harvesting %i audio files..." % library_size)
 
-    """
-    1. pass the playlist name to check for it on spotify
-    2. Read the metadata from the audio files
-    3. Prompt the AI to read the filename and extract the metadata
-    4. add them (join both lists of dict) to the list of metadata
-    5. Search for the songs on Spotify
-    6. Add the songs to the playlist (if they're not already on there)
-    7. Organise how everything is called and setup the control flow
-    """
+
     audio_files = media_file_finder(target_directory)
     metadata, files_without_metadata = metadata_harvester(audio_files)
+    print("The following files have no metadata:", files_without_metadata)
+    filename_data = process_prompt_result(invoke_prompt_to_ai(files_without_metadata))
+    metadata.extend(filename_data)
+    playlist_id = get_or_create_playlist(sp, sp.current_user()['id'], playlist_name)
+
+    new_songs, failed_tracks = search_songs_not_in_playlist(sp, playlist_id, metadata)
+    added_tracks = add_songs_to_playlist(sp, playlist_id, new_songs)
+    print("========================================")
+    print(f"Added {len(added_tracks)} song(s) to the playlist.")
+    print("========================================")
+    print("AudioReaper has finished harvesting your audio files.")
 
 
 if __name__ == "__main__":

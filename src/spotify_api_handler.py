@@ -55,7 +55,7 @@ def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
 
     for song in metadata_list:
         # Clean up metadata before search
-        clean_title, clean_artist = clean_metadata(song['title'], song['artist'])
+        clean_title, clean_artist = clean_metadata(song['Title'], song['Artist'])
         query = f"track:{clean_title} artist:{clean_artist}"
         result = sp.search(query, type='track', limit=1)
         tracks = result['tracks']['items']
