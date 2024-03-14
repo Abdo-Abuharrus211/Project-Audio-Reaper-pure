@@ -9,6 +9,9 @@
         ii. If it does not exist, add the song to the playlist
 
     """
+from fuzzywuzzy import fuzz
+import Levenshtein
+
 from src.fileIO import clean_metadata
 
 
@@ -57,12 +60,18 @@ def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
         # Clean up metadata before search
         clean_title, clean_artist = clean_metadata(song['Title'], song['Artist'])
         query = f"track:{clean_title} artist:{clean_artist}"
-        result = sp.search(query, type='track', limit=1)
+        result = sp.search(query, type='track', limit=5)  # Increase limit to get more results
         tracks = result['tracks']['items']
-        if tracks and tracks[0]['id'] not in existing_track_ids:
-            not_in_playlist.append(tracks[0]['id'])
-        elif not tracks:
-            failed_tracks.append(f"{clean_title} by {clean_artist}")
+        if tracks:
+            # Calculate similarity between search query and track names
+            similarities = [fuzz.ratio(f"{track['name']} {track['artists'][0]['name']}", query) for track in tracks]
+            # Get the track with the highest similarity
+            best_match_index = similarities.index(max(similarities))
+            best_match = tracks[best_match_index]
+            if best_match['id'] not in existing_track_ids:
+                not_in_playlist.append(best_match['id'])
+        else:
+            failed_tracks.append(f"{clean_title}, {clean_artist}")
             print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
 
     return not_in_playlist, failed_tracks
