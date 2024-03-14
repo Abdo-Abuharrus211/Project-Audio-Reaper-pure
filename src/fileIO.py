@@ -85,14 +85,21 @@ def clean_metadata(title, artist):
     :return: a tuple of strings representing the cleaned title and artist
     """
     # Remove common extraneous information from titles
+    title = title.replace(" - Copy", "").replace(" (HD)", "").replace(" (Official Video)", "").strip()
+
+    # Handle case where artist and title are combined in 'Title' field
+    if " - " in title and not artist:
+        artist, title = title.split(" - ", 1)
+
+    # Existing cleaning process
     title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
-    # Refine artist name
     if artist is None:
         artist = ""
     else:
         artist = artist.split(',')[0]  # Take the first artist if there are multiple
     artist = re.sub(r'\(.*\)|\[.*]|{.*}|official.*|video.*', '', artist, flags=re.I).strip()
+
     return title, artist
 
 
@@ -116,7 +123,7 @@ def failed_csv_writer(items):
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         for _ in items:
-            writer.writerow(_)
+            writer.writerow([_])
 
 # stuff = metadata_harvester(media_file_finder(select_folder()))
 # for x in stuff[0]: print(x)
