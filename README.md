@@ -34,4 +34,4 @@ To create a playlist of these songs on Spotify.
 - [ ] ~~Ensure wiping the failure file before each run~~
 - [ ] ~~delete the metadata CSV file after each run~~
 - [ ] OpenAI API rate limit handling
-- 
+- [ ] Docstrings for all classes and methods
