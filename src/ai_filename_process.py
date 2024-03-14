@@ -30,9 +30,9 @@ def invoke_prompt_to_ai(file_names):
     ai_responses = []
     if len(file_names) > 0:
         for name in file_names:
-            prompt = f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
-                     f" and Album with commas, and leave blank if not specified. Don't label fields" \
-                     f" and Say nothing else."
+            prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
+                      f" and Album with commas, and leave blank if not specified, remove excess words." \
+                      f" Don't label fields and Say nothing else.")
             response = client.chat.completions.create(
                 model="gpt-4-0125-preview",
                 messages=[
@@ -44,19 +44,22 @@ def invoke_prompt_to_ai(file_names):
 
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
-            # print(response_text)
+            print(response_text)
 
     return ai_responses
 
 
-def process_prompt_result(prompt_results):
+def process_response(response):
     """
         This function will process the result from the prompt and format the result.
         :return:
         """
     metadata = []
-    for res in prompt_results:
+    for res in response:
         segmented_text = res.split(",")
+        if len(segmented_text) < 3:
+            # Fill the rest with empty strings
+            segmented_text += [''] * (3 - len(segmented_text))
         song_dict = {"Title": segmented_text[0], "Artist": segmented_text[1], "Album": segmented_text[2]}
         metadata.append(song_dict)
     return metadata
