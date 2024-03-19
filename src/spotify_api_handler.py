@@ -9,6 +9,7 @@
         ii. If it does not exist, add the song to the playlist
 
     """
+import requests
 from fuzzywuzzy import fuzz
 import Levenshtein
 
@@ -26,13 +27,17 @@ def get_or_create_playlist(sp, user_id, playlist_name):
     :postcondition: either get the playlist's id or create a new one and get its id
     :return: the playlist's id
     """
-    playlists = sp.current_user_playlists()
-    for playlist in playlists['items']:
-        if playlist['name'] == playlist_name:
-            return playlist['id']
+    try:
+        playlists = sp.current_user_playlists()
+        for playlist in playlists['items']:
+            if playlist['name'] == playlist_name:
+                return playlist['id']
 
-    new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
-    return new_playlist['id']
+        new_playlist = sp.user_playlist_create(user_id, playlist_name, public=True)
+        return new_playlist['id']
+    except Exception as e:
+        print(f"Spotify API error occurred while creating playlist: {e}")
+        return None
 
 
 def check_both_available(song_data) -> bool:
@@ -63,7 +68,6 @@ def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
     not_in_playlist = []
     existing_track_ids = set()
     failed_tracks = []
-
     results = sp.playlist_items(playlist_id)
     for item in results['items']:
         track = item['track']
@@ -77,15 +81,21 @@ def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
             query = f"track:{clean_title} artist:{clean_artist}"
         else:
             query = f"track:{clean_title}"
-        result = sp.search(query, type='track', limit=5)
-        tracks = result['tracks']['items']
-        if tracks:
-            best_match = find_best_match(query, tracks)
-            if best_match['id'] not in existing_track_ids:
-                not_in_playlist.append(best_match['id'])
-        else:
-            failed_tracks.append(f"{clean_title}, {clean_artist}")
-            print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
+        try:
+            result = sp.search(query, type='track', limit=5)
+            tracks = result['tracks']['items']
+            if tracks:
+                best_match = find_best_match(query, tracks)
+                if best_match['id'] not in existing_track_ids:
+                    not_in_playlist.append(best_match['id'])
+            else:
+                failed_tracks.append(f"{clean_title}, {clean_artist}")
+                print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
+        except requests.exceptions.ReadTimeout:
+            print(f"Spotify API timeout occurred for track: {query}")
+            failed_tracks.append(query)
+        except Exception as e:
+            print(f"Spotify API error occurred while searching for songs: {e}")
     return not_in_playlist, failed_tracks
 
 
@@ -115,8 +125,11 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
     """
     added_tracks = []
     batch_size = 100
-    for i in range(0, len(track_ids), batch_size):
-        batch = track_ids[i:i + batch_size]
-        sp.playlist_add_items(playlist_id, batch)
-        added_tracks.extend(batch)
+    try:
+        for i in range(0, len(track_ids), batch_size):
+            batch = track_ids[i:i + batch_size]
+            sp.playlist_add_items(playlist_id, batch)
+            added_tracks.extend(batch)
+    except Exception as e:
+        print(f"Spotify API error occurred while adding songs to playlist: {e}")
     return added_tracks

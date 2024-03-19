@@ -28,20 +28,24 @@ def invoke_prompt_to_ai(file_names):
     ai_responses = []
     if len(file_names) > 0:
         for name in file_names:
-            prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
-                      f" and Album with commas, such that they return match when searched on Spotify, and leave blank "
-                      f"if not specified, remove excess words. Don't label fields and Say nothing else.")
-            response = client.chat.completions.create(
-                model="gpt-4-0125-preview",
-                messages=[
-                    {"role": "system", "content": "You are a metadata extractor assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=60,
-            )
+            prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist,"
+                      " and Album with commas, such that they return match when searched on Spotify, and leave blank"
+                      " if not specified, remove excess words. Don't label fields and Say nothing else.")
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4-0125-preview",
+                    messages=[
+                        {"role": "system", "content": "You are a metadata extractor assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=60,
+                )
+            except Exception as e:
+                print(f"An error with OpenAI API occurred {e}")
+                continue
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
-            print(response_text)
+            # print(response_text)
     return ai_responses
 
 
