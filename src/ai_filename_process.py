@@ -1,6 +1,6 @@
 """
 This file is mainly used to process the file name of songs without
-metadata and is often convulted and messy. So AI will be used to extract
+metadata and is often consulted and messy. So AI will be used to extract
 info from the file name and then search for it on Spotify.
 
 """
@@ -25,14 +25,12 @@ def invoke_prompt_to_ai(file_names):
         :precondition: file_names is a valid none-empty list of strings
         :return:
         """
-
-    # TODO: implement failsafe and contingency for when rate limit is reached
     ai_responses = []
     if len(file_names) > 0:
         for name in file_names:
             prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
-                      f" and Album with commas, and leave blank if not specified, remove excess words." \
-                      f" Don't label fields and Say nothing else.")
+                      f" and Album with commas, such that they return match when searched on Spotify, and leave blank "
+                      f"if not specified, remove excess words. Don't label fields and Say nothing else.")
             response = client.chat.completions.create(
                 model="gpt-4-0125-preview",
                 messages=[
@@ -41,11 +39,9 @@ def invoke_prompt_to_ai(file_names):
                 ],
                 max_tokens=60,
             )
-
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
             print(response_text)
-
     return ai_responses
 
 

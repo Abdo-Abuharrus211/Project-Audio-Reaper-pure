@@ -35,6 +35,19 @@ def get_or_create_playlist(sp, user_id, playlist_name):
     return new_playlist['id']
 
 
+def check_both_available(song_data) -> bool:
+    """
+    This function checks if a song's metadat includes both the title and artist.
+
+    :param song_data: a dictionary containing song metadata
+    :return: a boolean value, True if both are available, false otherwise
+    """
+    if song_data['Title'] != "" and song_data['Artist'] != "":
+        return True
+    else:
+        return False
+
+
 def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
     """
     Search for songs in the list of song metadata dictionaries and return a list of songs not in the playlist
@@ -57,24 +70,36 @@ def search_songs_not_in_playlist(sp, playlist_id, metadata_list):
         existing_track_ids.add(track['id'])
 
     for song in metadata_list:
-        # Clean up metadata before search
         clean_title, clean_artist = clean_metadata(song['Title'], song['Artist'])
-        query = f"track:{clean_title} artist:{clean_artist}"
-        result = sp.search(query, type='track', limit=5)  # Increase limit to get more results
+        both_artist_and_title = check_both_available(song)
+        query = ""
+        if both_artist_and_title:
+            query = f"track:{clean_title} artist:{clean_artist}"
+        else:
+            query = f"track:{clean_title}"
+        result = sp.search(query, type='track', limit=5)
         tracks = result['tracks']['items']
         if tracks:
-            # Calculate similarity between search query and track names
-            similarities = [fuzz.ratio(f"{track['name']} {track['artists'][0]['name']}", query) for track in tracks]
-            # Get the track with the highest similarity
-            best_match_index = similarities.index(max(similarities))
-            best_match = tracks[best_match_index]
+            best_match = find_best_match(query, tracks)
             if best_match['id'] not in existing_track_ids:
                 not_in_playlist.append(best_match['id'])
         else:
             failed_tracks.append(f"{clean_title}, {clean_artist}")
             print(f"Could not find track on Spotify: {clean_title} by {clean_artist}")
-
     return not_in_playlist, failed_tracks
+
+
+def find_best_match(query, tracks):
+    """
+    Find the best match for a query in a list of tracks.
+    :param query: A string representing the query containing the song's title and artist
+    :param tracks: a list of dictionaries containing song metadata
+    :return: a dictionary representing the best match for the query
+    """
+    similarities = [fuzz.ratio(f"{track['name']} {track['artists'][0]['name']}", query) for track in tracks]
+    best_match_index = similarities.index(max(similarities))
+    best_match = tracks[best_match_index]
+    return best_match
 
 
 def add_songs_to_playlist(sp, playlist_id, track_ids):

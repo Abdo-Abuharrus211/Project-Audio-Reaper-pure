@@ -103,7 +103,6 @@ def clean_metadata(title, artist):
     return title, artist
 
 
-# TODO: this is now redundant, remove later after testing only!
 def failed_csv_writer(items):
     """
     Write songs that failed to a CSV file.
