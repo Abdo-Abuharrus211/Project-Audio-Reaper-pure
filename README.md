@@ -26,12 +26,13 @@ To create a playlist of these songs on Spotify.
 - [X] Consider CSV headers for the txt file metadata collection
 - [X] Add Docstrings and doctests (where applicable)
 - [ ] implement unit testing
-- [ ] Write documentation and instructions for use in the README.md file
 - [X] File browser??
-- [ ] GUI??
 - [ ] ~~Consider using a database instead of a CSV file~~
 - [X] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
 - [ ] ~~Ensure wiping the failure file before each run~~
 - [ ] ~~delete the metadata CSV file after each run~~
 - [ ] OpenAI API rate limit handling
+- [ ] Write a function to retry again with the songs that were not found (aka the failures)
+- 
 - [ ] Docstrings for all classes and methods
+- [ ] Write documentation and instructions for use in the README.md file
