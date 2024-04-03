@@ -89,7 +89,6 @@ def clean_metadata(title, artist):
     if " - " in title and not artist:
         artist, title = title.split(" - ", 1)
 
-    # Existing cleaning process
     title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
     if artist is None:
