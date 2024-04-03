@@ -25,7 +25,7 @@ To create a playlist of these songs on Spotify.
 - [X] Implement error handling for all possible errors(try-except)
 - [X] Consider CSV headers for the txt file metadata collection
 - [X] Add Docstrings and doctests (where applicable)
-- [ ] implement unit testing
+- [X] implement unit testing
 - [X] File browser??
 - [ ] ~~Consider using a database instead of a CSV file~~
 - [X] Decompose into separate classes to maintain Separation of Concerns and Single Responsibility Principle
@@ -34,5 +34,5 @@ To create a playlist of these songs on Spotify.
 - [ ] OpenAI API rate limit handling
 - [X] Write a function to retry again with the songs that were not found (aka the failures)
 - [ ] Retry when timed out
-- [ ] Docstrings for all classes and methods
+- [X] Docstrings for all classes and methods
 - [ ] Write documentation and instructions for use in the README.md file
