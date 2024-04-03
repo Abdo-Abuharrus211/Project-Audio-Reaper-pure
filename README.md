@@ -32,7 +32,7 @@ To create a playlist of these songs on Spotify.
 - [ ] ~~Ensure wiping the failure file before each run~~
 - [ ] ~~delete the metadata CSV file after each run~~
 - [ ] OpenAI API rate limit handling
-- [ ] Write a function to retry again with the songs that were not found (aka the failures)
-- 
+- [X] Write a function to retry again with the songs that were not found (aka the failures)
+- [ ] Retry when timed out
 - [ ] Docstrings for all classes and methods
 - [ ] Write documentation and instructions for use in the README.md file

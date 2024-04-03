@@ -51,8 +51,9 @@ def invoke_prompt_to_ai(file_names):
 
 def process_response(response):
     """
-        This function will process the result from the prompt and format the result.
-        :return:
+        Process the result from the prompt and format the result and return the metadata.
+
+        :return: A list of dictionaries containing track metadata
         """
     metadata = []
     for res in response:
