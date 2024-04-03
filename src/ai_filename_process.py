@@ -23,7 +23,7 @@ def invoke_prompt_to_ai(file_names):
 
         :param: file_names: a list of strings representing the filenames of songs
         :precondition: file_names is a valid none-empty list of strings
-        :return:
+        :return: a list of strings containing the extracted metadata
         """
     ai_responses = []
     if len(file_names) > 0:
