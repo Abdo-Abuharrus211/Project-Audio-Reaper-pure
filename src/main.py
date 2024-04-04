@@ -5,7 +5,8 @@ from spotipy.oauth2 import SpotifyOAuth
 
 from src.ai_filename_process import process_response, invoke_prompt_to_ai
 from src.fileIO import select_folder, media_file_finder, metadata_harvester, failed_csv_writer
-from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist
+from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist, \
+    retry_failed_tracks
 
 
 def main():
@@ -37,13 +38,15 @@ def main():
     metadata, files_without_metadata = metadata_harvester(audio_files)
     print("The following files have no metadata:", files_without_metadata)
     filename_data = process_response(invoke_prompt_to_ai(files_without_metadata))
-    print(filename_data)
+    # print(filename_data)
     metadata.extend(filename_data)
     playlist_id = get_or_create_playlist(sp, sp.current_user()['id'], playlist_name)
 
     new_songs, failed_tracks = search_songs_not_in_playlist(sp, playlist_id, metadata)
     failed_csv_writer(failed_tracks)
     added_tracks = add_songs_to_playlist(sp, playlist_id, new_songs)
+    print("Second chance! Retrying failed tracks...")
+    add_songs_to_playlist(sp, playlist_id, retry_failed_tracks())
     print("========================================")
     print(f"Added {len(added_tracks)} song(s) to the playlist.")
     print("========================================")

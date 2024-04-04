@@ -1,6 +1,6 @@
 """
 This file is mainly used to process the file name of songs without
-metadata and is often convulted and messy. So AI will be used to extract
+metadata and is often consulted and messy. So AI will be used to extract
 info from the file name and then search for it on Spotify.
 
 """
@@ -23,36 +23,37 @@ def invoke_prompt_to_ai(file_names):
 
         :param: file_names: a list of strings representing the filenames of songs
         :precondition: file_names is a valid none-empty list of strings
-        :return:
+        :return: a list of strings containing the extracted metadata
         """
-
-    # TODO: implement failsafe and contingency for when rate limit is reached
     ai_responses = []
     if len(file_names) > 0:
         for name in file_names:
-            prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist," \
-                      f" and Album with commas, and leave blank if not specified, remove excess words." \
-                      f" Don't label fields and Say nothing else.")
-            response = client.chat.completions.create(
-                model="gpt-4-0125-preview",
-                messages=[
-                    {"role": "system", "content": "You are a metadata extractor assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=60,
-            )
-
+            prompt = (f"Given the filename '{name}', provide the metadata in plain text, separating Title, Artist,"
+                      " and Album with commas, such that they return match when searched on Spotify, and leave blank"
+                      " if not specified, remove excess words. Don't label fields and Say nothing else.")
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4-0125-preview",
+                    messages=[
+                        {"role": "system", "content": "You are a metadata extractor assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=60,
+                )
+            except Exception as e:
+                print(f"An error with OpenAI API occurred {e}")
+                continue
             response_text = response.choices[0].message.content.strip()
             ai_responses.append(response_text)
-            print(response_text)
-
+            # print(response_text)
     return ai_responses
 
 
 def process_response(response):
     """
-        This function will process the result from the prompt and format the result.
-        :return:
+        Process the result from the prompt and format the result and return the metadata.
+
+        :return: A list of dictionaries containing track metadata
         """
     metadata = []
     for res in response:

@@ -14,9 +14,7 @@ import ntpath
 import os
 import re
 import tkinter as tk
-
 from tkinter import filedialog
-
 from tinytag import tinytag
 
 
@@ -91,7 +89,6 @@ def clean_metadata(title, artist):
     if " - " in title and not artist:
         artist, title = title.split(" - ", 1)
 
-    # Existing cleaning process
     title = re.sub(r'\(.*\)|\[.*]|{.*}|-.*|ft\..*|feat\..*|official.*|video.*|\d+kbps.*', '', title,
                    flags=re.I).strip()
     if artist is None:
@@ -103,7 +100,6 @@ def clean_metadata(title, artist):
     return title, artist
 
 
-# TODO: this is now redundant, remove later after testing only!
 def failed_csv_writer(items):
     """
     Write songs that failed to a CSV file.
@@ -124,6 +120,21 @@ def failed_csv_writer(items):
         writer = csv.writer(f)
         for _ in items:
             writer.writerow([_])
+
+# TODO: Mull this one over as it can result in incorrect data being written
+# def write_metadata_to_files(file_paths, metadata_list):
+#     """
+#     Write extracted metadata onto song file tags.
+#
+#     :param file_paths: a list of strings representing the file paths of songs
+#     :param metadata_list: a list of dictionaries containing songs' metadata
+#     """
+#     for i in range(len(file_paths)):
+#         audio = EasyID3(file_paths[i])
+#         audio['title'] = metadata_list[i]['Title']
+#         audio['artist'] = metadata_list[i]['Artist']
+#         audio['album'] = metadata_list[i]['Album']
+#         audio.save()
 
 # stuff = metadata_harvester(media_file_finder(select_folder()))
 # for x in stuff[0]: print(x)
