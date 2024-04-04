@@ -9,6 +9,8 @@
         ii. If it does not exist, add the song to the playlist
 
     """
+import os
+
 import requests
 from fuzzywuzzy import fuzz
 import Levenshtein
@@ -134,16 +136,3 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
         print(f"Spotify API error occurred while adding songs to playlist: {e}")
     return added_tracks
 
-
-def retry_failed_tracks():
-    """
-    Retry searching for failed tracks in the failures CSV file.
-
-    :return: A list of dictionaries containing the metadata of the failed tracks from the CSV file
-    """
-    with open("metadata/failures.csv", 'r') as file:
-        failed_tracks = file.readlines()
-    failed_metadata = []
-    for track in failed_tracks:
-        title, artist = track.split(", ")
-        failed_metadata.append({'Title': title, 'Artist': artist})
