@@ -4,16 +4,15 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 from src.ai_filename_process import process_response, invoke_prompt_to_ai
-from src.fileIO import select_folder, media_file_finder, metadata_harvester, failed_csv_writer
-from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist, \
-    retry_failed_tracks
+from src.fileIO import select_folder, media_file_finder, metadata_harvester, failed_csv_writer, read_failed_tracks
+from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist
 
 
 def main():
     load_dotenv()
     client_id = os.getenv('SPOTIFY_CLIENT_ID')
     client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-    redirect_uri = 'https://localhost:8888'
+    redirect_uri = 'http://localhost:8888'
 
     # Authenticate with Spotify API and instantiate a Spotify object
     sp = spotipy.Spotify(
@@ -43,8 +42,9 @@ def main():
     new_songs, failed_tracks = search_songs_not_in_playlist(sp, playlist_id, metadata)
     failed_csv_writer(failed_tracks)
     added_tracks = add_songs_to_playlist(sp, playlist_id, new_songs)
-    print("Second chance! Retrying failed tracks...")
-    add_songs_to_playlist(sp, playlist_id, retry_failed_tracks())
+    # print("Second chance! Retrying failed tracks...")
+    # round_two = [search_songs_not_in_playlist(sp, playlist_id, track) for track in failed_tracks]
+    # add_songs_to_playlist(sp, playlist_id, round_two)
     print("========================================")
     print(f"Added {len(added_tracks)} song(s) to the playlist.")
     print("========================================")

@@ -117,9 +117,33 @@ def failed_csv_writer(items):
     csv_file_path = os.path.join(failures_directory_path, csv_filename + '.csv')
 
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
+        # writer = csv.writer(f)
+        writer = csv.writer(f, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE, escapechar='\\')
         for _ in items:
             writer.writerow([_])
+
+
+def read_failed_tracks():
+    """
+    Retry searching for failed tracks in the failures CSV file.
+
+    :return: A list of dictionaries containing the metadata of the failed tracks from the CSV file
+    """
+    current_directory_path = os.path.dirname(os.path.abspath(__file__))
+    root_directory_path = os.path.dirname(current_directory_path)
+    file_path = os.path.join(root_directory_path, 'failures', 'failures.CSV')
+
+    failed_metadata = []
+    try:
+        with open(file_path, 'r') as file:
+            failed_tracks = file.readlines()
+        for track in failed_tracks:
+            title, artist = track.split(", ")
+            failed_metadata.append({'Title': title.replace('\\', ''), 'Artist': artist.replace('\n', '')})
+    except FileNotFoundError:
+        print("No failures.csv file found.")
+    return failed_metadata
+
 
 # TODO: Mull this one over as it can result in incorrect data being written
 # def write_metadata_to_files(file_paths, metadata_list):
