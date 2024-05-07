@@ -73,6 +73,25 @@ def metadata_harvester(song_files):
     return metadata, file_names
 
 
+def organize_harvest(bulk_metadata):
+    """
+    Organize the incoming metadata according to the abundance of metadata per song, and return relevant lists.
+
+    This function is the alternative of metadata_harvester for when receiving data from the frontend via API.
+    :param: bulk_metadata: a list of dictionaries representing song metadata and filenames
+    :precondition: bulk_metadata must be a non-empty list of dictionaries containing strings
+    :return: two separate lists, a list of songs with metadata and a list of file names for songs without
+    """
+    metadata_list = []
+    file_names_list = []
+    for item in bulk_metadata:
+        if item.Title and item.Artist:
+            metadata_list.append(item)
+        else:
+            file_names_list.append(item.FileName)
+    return metadata_list, file_names_list
+
+
 def clean_metadata(title, artist):
     """
     Remove excess unwanted characters from a song's metadata.
@@ -143,7 +162,6 @@ def read_failed_tracks():
     except FileNotFoundError:
         print("No failures.csv file found.")
     return failed_metadata
-
 
 # TODO: Mull this one over as it can result in incorrect data being written
 # def write_metadata_to_files(file_paths, metadata_list):
