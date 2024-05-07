@@ -108,7 +108,7 @@ def find_best_match(query, tracks):
     :param tracks: a list of dictionaries containing song metadata
     :return: a dictionary representing the best match for the query
     """
-    similarities = [fuzz.ratio(f"{track['name']} {track['artists'][0]['name']}", query) for track in tracks]
+    similarities = [fuzz.token_sort_ratio(f"{track['name']} {track['artists'][0]['name']}", query) for track in tracks]
     best_match_index = similarities.index(max(similarities))
     best_match = tracks[best_match_index]
     return best_match
@@ -135,4 +135,3 @@ def add_songs_to_playlist(sp, playlist_id, track_ids):
     except Exception as e:
         print(f"Spotify API error occurred while adding songs to playlist: {e}")
     return added_tracks
-
