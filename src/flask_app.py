@@ -12,25 +12,31 @@ api = Api(app)
 CORS(app)
 
 
+# TODO:
+# implement the auth
+# kickstart the process
+# prep response
+# send back response
+
 @app.route('/loginSpotify', methods=['POST'])
 def login_user(auth_key):
     # authenticate the user using the passed auth key to get the sp object thingy
     spotify_object = login_user(auth_key)
-    return "Bob!"
+    return spotify_object
 
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
     data = request.get_json()
     print(data)
-    # parse data and separate it
-    return jsonify(data)
+    # TODO: parse data and separate it...
+    return jsonify({"message": "Bob!"})
 
 
 def process_data(data):
     # Process your data here
     processed_data = harvest(data)
-    return data
+    return processed_data
 
 
 if __name__ == '__main__':

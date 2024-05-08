@@ -16,6 +16,7 @@ from src.spotify_api_handler import get_or_create_playlist, search_songs_not_in_
 #       get the name of the Playlist
 #       get the metadata
 #       return the stuff that needs to be conveyed(Songs added, songs failed...etc)
+#       Consider making this a Class to have fields...
 
 def login_user(auth_key):
     load_dotenv()
@@ -28,6 +29,7 @@ def login_user(auth_key):
         auth_manager=SpotifyOAuth(client_id, client_secret, redirect_uri,
                                   scope='playlist-modify-public playlist-modify-private playlist-read-private',
                                   open_browser=True))
+    return sp
 
 
 def harvest(metadata, sp, playlist_name):
