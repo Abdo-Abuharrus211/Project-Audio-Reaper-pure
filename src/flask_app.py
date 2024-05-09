@@ -22,9 +22,9 @@ driver = Driver()
 
 
 @app.route('/loginSpotify', methods=['POST'])
-def login_user(auth_key):
+def login_user(token):
     # authenticate the user using the passed auth key to get the sp object thingy
-    spotify_object = login_user(auth_key)
+    spotify_object = login_user(token)
     return spotify_object
 
 
@@ -39,6 +39,18 @@ def receive_metadata():
     print(data)
     # TODO: parse data and separate it...
     return jsonify({"message": "Bob!"})
+
+
+@app.route('/getResults', methods=['GET'])
+def send_results():
+    results = driver.added
+    return jsonify(results)
+
+
+@app.route('/getFailed', methods=['GET'])
+def send_failed():
+    failed = driver.failed
+    return jsonify(failed)
 
 
 def process_data(data):
