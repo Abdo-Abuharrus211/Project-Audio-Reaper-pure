@@ -15,7 +15,7 @@ import requests
 from fuzzywuzzy import fuzz
 import Levenshtein
 
-from src.fileIO import clean_metadata
+from fileIO import clean_metadata
 
 
 def get_or_create_playlist(sp, user_id, playlist_name):
