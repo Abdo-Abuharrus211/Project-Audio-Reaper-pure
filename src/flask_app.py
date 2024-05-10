@@ -3,7 +3,7 @@ This is the backend app, built using flask.
 """
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, abort
 
 from driver import Driver
 
@@ -21,24 +21,37 @@ CORS(app)
 driver = Driver()
 
 
-@app.route('/loginSpotify', methods=['POST'])
-def login_user(token):
+@app.route('/authCode', methods=['POST'])
+def login_user():
     # authenticate the user using the passed auth key to get the sp object thingy
-    spotify_object = login_user(token)
-    return spotify_object
+    code = request.json.get('code')
+    if not code:
+        abort(400)
+    print("auth code:" + code)
+    spotify_object = driver.instantiate_sp_object(code)
+    if spotify_object:
+        return jsonify({"message": "Authenticated successfully"})
+    else:
+        return jsonify({"message": "Unsuccessful authentication"})
 
 
-@app.route('/setPlaylistName', methods=['POST'])
-def register_playlist(name_of_playlist):
-    driver.set_playlist_name(name_of_playlist)
+@app.route('/setPlaylistName/<name>', methods=['POST'])
+def register_playlist(name):
+    if not name or type(name) is not str:
+        abort(400)
+    print("Playlist is called: " + name)
+    driver.set_playlist_name(name)
+    return jsonify({"message": "Playlist name set"})
 
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
     data = request.get_json()
-    print(data)
-    # TODO: parse data and separate it...
-    return jsonify({"message": "Bob!"})
+    if not data:
+        abort(400)
+    #  TODO: Do something here to pass it on or proceed process
+    print("Metadata:\n" + data)
+    return jsonify({"message": "Metadata received"})
 
 
 @app.route('/getResults', methods=['GET'])
@@ -61,4 +74,4 @@ def process_data(data):
 
 if __name__ == '__main__':
     # the debug set to true logs stuff to the console, so we can debug (only when developing)
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
