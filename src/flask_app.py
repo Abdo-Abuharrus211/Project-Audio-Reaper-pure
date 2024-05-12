@@ -46,11 +46,11 @@ def register_playlist(name):
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
+
     data = request.get_json()
-    if not data or type(data) is not dict:
+    if not data:
         return jsonify({"message": "Data not valid"}), 400
-    #  TODO: Do something here to pass it on or proceed process
-    print("Metadata:\n", data)
+    begin_process(data)
     return jsonify({"message": "Metadata received"})
 
 
@@ -66,10 +66,8 @@ def send_failed():
     return jsonify(failed)
 
 
-def process_data(data):
-    # Process your data here
-    processed_data = driver.harvest(data)
-    return processed_data
+def begin_process(goodies):
+    driver.harvest(goodies)
 
 
 if __name__ == '__main__':

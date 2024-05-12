@@ -37,14 +37,13 @@ class Driver:
             print(f"Error occurred while instantiating Spotify object: {e}")
             return None
 
-    def harvest(self, metadata):
+    def harvest(self, unrefined_data):
         try:
-            metadata, files_without_metadata = organize_harvest(metadata)
+            metadata, files_without_metadata = organize_harvest(unrefined_data)
             filename_data = process_response(invoke_prompt_to_ai(files_without_metadata))
             metadata.extend(filename_data)
             playlist_id = get_or_create_playlist(self.sp, self.sp.current_user()['id'], self.playlist_name)
             new_songs, failed_tracks = search_songs_not_in_playlist(self.sp, playlist_id, metadata)
-            # failed_csv_writer(failed_tracks)
             added_tracks = add_songs_to_playlist(self.sp, playlist_id, new_songs)
             self.added = added_tracks
             self.failed = failed_tracks
@@ -55,3 +54,6 @@ class Driver:
 
     def set_playlist_name(self, name):
         self.playlist_name = name
+
+    def set_metadata(self, data):
+        self.metadata = data

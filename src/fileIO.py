@@ -85,7 +85,7 @@ def organize_harvest(bulk_metadata):
     metadata_list = []
     file_names_list = []
     for item in bulk_metadata:
-        if item.Title and item.Artist:
+        if item['Title'] and item['Artist']:
             metadata_list.append(item)
         else:
             file_names_list.append(item.FileName)
