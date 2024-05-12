@@ -38,19 +38,19 @@ def login_user():
 @app.route('/setPlaylistName/<name>', methods=['POST'])
 def register_playlist(name):
     if not name or type(name) is not str:
-        return jsonify({"message": "Non valid value"}), 400
+        return jsonify({"message": "Non valid value" + name}), 400
     print("Playlist is called: " + name)
     driver.set_playlist_name(name)
-    return jsonify({"message": "Playlist name set"})
+    return jsonify({"message": "Playlist name set to " + name})
 
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
     data = request.get_json()
-    if not data:
+    if not data or type(data) is not dict:
         return jsonify({"message": "Data not valid"}), 400
     #  TODO: Do something here to pass it on or proceed process
-    print("Metadata:\n" + data)
+    print("Metadata:\n", data)
     return jsonify({"message": "Metadata received"})
 
 
