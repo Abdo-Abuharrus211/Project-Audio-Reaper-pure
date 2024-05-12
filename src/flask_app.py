@@ -3,7 +3,7 @@ This is the backend app, built using flask.
 """
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_restful import Api, Resource, abort
+from flask_restful import Api, Resource
 
 from driver import Driver
 
@@ -26,7 +26,7 @@ def login_user():
     # authenticate the user using the passed auth key to get the sp object thingy
     code = request.json.get('code')
     if not code:
-        abort(400)
+        return jsonify({"message": "Not an authentication code"}), 400
     print("auth code:" + code)
     spotify_object = driver.instantiate_sp_object(code)
     if spotify_object:
@@ -38,7 +38,7 @@ def login_user():
 @app.route('/setPlaylistName/<name>', methods=['POST'])
 def register_playlist(name):
     if not name or type(name) is not str:
-        abort(400)
+        return jsonify({"message": "Non valid value"}), 400
     print("Playlist is called: " + name)
     driver.set_playlist_name(name)
     return jsonify({"message": "Playlist name set"})
@@ -48,7 +48,7 @@ def register_playlist(name):
 def receive_metadata():
     data = request.get_json()
     if not data:
-        abort(400)
+        return jsonify({"message": "Data not valid"}), 400
     #  TODO: Do something here to pass it on or proceed process
     print("Metadata:\n" + data)
     return jsonify({"message": "Metadata received"})
