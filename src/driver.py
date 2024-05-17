@@ -36,6 +36,12 @@ class Driver:
             print(f"Error occurred while harvesting: {e}")
             return None, None
 
+    def get_added(self):
+        return self.added
+
+    def get_failed(self):
+        return self.failed
+
     def set_sp_object(self, spot_obj):
         self.sp = spot_obj
 
