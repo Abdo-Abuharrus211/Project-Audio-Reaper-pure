@@ -87,13 +87,13 @@ def receive_metadata():
 
 @app.route('/getResults', methods=['GET'])
 def send_results():
-    results = driver.added
+    results = driver.get_added()
     return jsonify(results)
 
 
 @app.route('/getFailed', methods=['GET'])
 def send_failed():
-    failed = driver.failed
+    failed = driver.get_failed()
     return jsonify(failed)
 
 
