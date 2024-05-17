@@ -1,7 +1,11 @@
 """
 This is the backend app, built using flask.
 """
-from flask import Flask, request, jsonify
+import os
+
+import spotipy
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 from flask_restful import Api, Resource
 
@@ -11,28 +15,56 @@ app = Flask(__name__)
 api = Api(app)
 CORS(app)
 
-# TODO:
-# implement the auth
-# kickstart the process
-# prep response
-# send back response
-
 # instantiating the driver
 driver = Driver()
 
+load_dotenv()
+my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
+my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+my_redirect_uri = 'http://localhost:5000/callback'
+# Set up Spotify OAuth
+sp_oauth = spotipy.oauth2.SpotifyOAuth(
+    client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
+    scope='playlist-modify-public playlist-modify-private playlist-read-private'
+)
 
-@app.route('/authCode', methods=['POST'])
-def login_user():
-    # authenticate the user using the passed auth key to get the sp object thingy
-    code = request.json.get('code')
+
+@app.route('/login', methods=['GET'])
+def login():
+    auth_url = sp_oauth.get_authorize_url()
+    return redirect(auth_url)
+
+
+@app.route('/callback')
+def callback():
+    code = request.args.get('code')
     if not code:
-        return jsonify({"message": "Not an authentication code"}), 400
-    print("auth code:" + code)
-    spotify_object = driver.instantiate_sp_object(code)
-    if spotify_object:
-        return jsonify({"message": "Authenticated successfully"})
-    else:
-        return jsonify({"message": "Unsuccessful authentication"})
+        return 'Authorization failed', 401
+    try:
+        token_info = sp_oauth.get_access_token(code)
+        access_token = token_info['access_token']
+        sp = spotipy.Spotify(auth=access_token)
+        driver.set_sp_object(sp)
+
+        # Access user data using the Spotify object
+        user = sp.current_user()
+        return f'Logged in as {user["display_name"]}'
+    except Exception as e:
+        return f'An error occurred: {e}', 500
+
+
+# @app.route('/authCode', methods=['POST'])
+# def login_user():
+#     # authenticate the user using the passed auth key to get the sp object thingy
+#     code = request.json.get('code')
+#     if not code:
+#         return jsonify({"message": "Not an authentication code"}), 400
+#     print("auth code:" + code)
+#     spotify_object = driver.instantiate_sp_object(code)
+#     if spotify_object:
+#         return jsonify({"message": "Authenticated successfully"})
+#     else:
+#         return jsonify({"message": "Unsuccessful authentication"})
 
 
 @app.route('/setPlaylistName/<name>', methods=['POST'])
@@ -46,7 +78,6 @@ def register_playlist(name):
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
-
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
