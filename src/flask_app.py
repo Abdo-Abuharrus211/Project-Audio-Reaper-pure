@@ -1,38 +1,81 @@
 """
 This is the backend app, built using flask.
 """
-from flask import Flask, request, jsonify
+import json
+import os
+import time
+
+import redis
+import spotipy
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
-from flask_restful import Api, Resource
+from flask_restful import Api
 
 from driver import Driver
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 api = Api(app)
 CORS(app)
-
-# TODO:
-# implement the auth
-# kickstart the process
-# prep response
-# send back response
+load_dotenv()
 
 # instantiating the driver
 driver = Driver()
+# Configure Redis
+try:
+    redis_client = redis.StrictRedis(
+        host=os.getenv('REDIS_HOST'),
+        port=int(os.getenv('REDIS_PORT')),
+        db=0,
+        decode_responses=True
+    )
+    redis_client.ping()  # Check if Redis server is reachable
+except redis.ConnectionError as e:
+    print(f"Could not connect to Redis: {e}")
+    redis_client = None
+
+my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
+my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+my_redirect_uri = 'http://localhost:5000/callback'
+# Set up Spotify OAuth
+sp_oauth = spotipy.oauth2.SpotifyOAuth(
+    client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
+    scope='playlist-modify-public playlist-modify-private playlist-read-private'
+)
 
 
-@app.route('/authCode', methods=['POST'])
-def login_user():
-    # authenticate the user using the passed auth key to get the sp object thingy
-    code = request.json.get('code')
+@app.route('/login', methods=['GET'])
+def login():
+    auth_url = sp_oauth.get_authorize_url()
+    return redirect(auth_url)
+
+
+@app.route('/callback')
+def callback():
+    code = request.args.get('code')
     if not code:
-        return jsonify({"message": "Not an authentication code"}), 400
-    print("auth code:" + code)
-    spotify_object = driver.instantiate_sp_object(code)
-    if spotify_object:
-        return jsonify({"message": "Authenticated successfully"})
-    else:
-        return jsonify({"message": "Unsuccessful authentication"})
+        return 'Authorization failed', 401
+    try:
+        token_info = sp_oauth.get_access_token()
+        access_token = token_info['access_token']
+        refresh_token = token_info['refresh_token']
+        expire_time = token_info['expires_at']
+
+        sp = spotipy.Spotify(auth=access_token)
+        user = sp.current_user()
+        # Store tokens in Redis
+        user_id = user['id']
+        # TODO: Uncomment the redis stuff when deploying
+        # redis_client.set(user_id, json.dumps({
+        #     'access_token': access_token,
+        #     'refresh_token': refresh_token,
+        #     'expires_at': expire_time
+        # }))
+        driver.set_sp_object(sp)
+        return f'Logged in as {user["display_name"]}'
+    except Exception as e:
+        return f'An error occurred: {e}', 500
 
 
 @app.route('/setPlaylistName/<name>', methods=['POST'])
@@ -46,7 +89,6 @@ def register_playlist(name):
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
-
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
@@ -56,18 +98,31 @@ def receive_metadata():
 
 @app.route('/getResults', methods=['GET'])
 def send_results():
-    results = driver.added
+    results = driver.get_added()
     return jsonify(results)
 
 
 @app.route('/getFailed', methods=['GET'])
 def send_failed():
-    failed = driver.failed
+    failed = driver.get_failed()
     return jsonify(failed)
 
 
 def begin_process(goodies):
     driver.harvest(goodies)
+
+
+def get_spotify_client(user_id):
+    if not redis_client:
+        raise Exception('Redis server not available')
+
+    token_info = json.loads(redis_client.get(user_id))
+    if token_info['expires_at'] - int(time.time()) < 60:
+        # Token has expired, refresh it
+        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+        redis_client.set(user_id, json.dumps(token_info))
+
+    return spotipy.Spotify(auth=token_info['access_token'])
 
 
 if __name__ == '__main__':

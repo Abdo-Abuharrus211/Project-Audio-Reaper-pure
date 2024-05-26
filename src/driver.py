@@ -21,22 +21,6 @@ class Driver:
         self.added = None
         self.failed = None
 
-    def instantiate_sp_object(self, auth_code):
-        load_dotenv()
-        client_id = os.getenv('SPOTIFY_CLIENT_ID')
-        client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-        redirect_uri = 'http://localhost:8888'
-        try:
-            sp_oauth = SpotifyOAuth(client_id, client_secret, redirect_uri,
-                                    scope='playlist-modify-public playlist-modify-private playlist-read-private')
-            auth_token = sp_oauth.get_access_token(code=auth_code)
-            self.sp = spotipy.Spotify(auth=auth_token)
-
-            return self.sp
-        except Exception as e:
-            print(f"Error occurred while instantiating Spotify object: {e}")
-            return None
-
     def harvest(self, unrefined_data):
         try:
             metadata, files_without_metadata = organize_harvest(unrefined_data)
@@ -51,6 +35,15 @@ class Driver:
         except Exception as e:
             print(f"Error occurred while harvesting: {e}")
             return None, None
+
+    def get_added(self):
+        return self.added
+
+    def get_failed(self):
+        return self.failed
+
+    def set_sp_object(self, spot_obj):
+        self.sp = spot_obj
 
     def set_playlist_name(self, name):
         self.playlist_name = name

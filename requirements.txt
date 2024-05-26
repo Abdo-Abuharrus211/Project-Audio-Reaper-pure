@@ -6,3 +6,4 @@ openai~=1.13.3
 requests~=2.31.0
 Levenshtein~=0.25.0
 fuzzywuzzy~=0.18.0
+redis~=5.0.1
