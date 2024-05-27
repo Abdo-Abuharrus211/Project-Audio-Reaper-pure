@@ -17,23 +17,25 @@ from driver import Driver
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
+# CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app)
 load_dotenv()
+
 
 # instantiating the driver
 driver = Driver()
 # Configure Redis
-try:
-    redis_client = redis.StrictRedis(
-        host=os.getenv('REDIS_HOST'),
-        port=int(os.getenv('REDIS_PORT')),
-        db=0,
-        decode_responses=True
-    )
-    redis_client.ping()  # Check if Redis server is reachable
-except redis.ConnectionError as e:
-    print(f"Could not connect to Redis: {e}")
-    redis_client = None
+# try:
+#     redis_client = redis.StrictRedis(
+#         host=os.getenv('REDIS_HOST'),
+#         port=int(os.getenv('REDIS_PORT')),
+#         db=0,
+#         decode_responses=True
+#     )
+#     redis_client.ping()  # Check if Redis server is reachable
+# except redis.ConnectionError as e:
+#     print(f"Could not connect to Redis: {e}")
+#     redis_client = None
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -48,7 +50,7 @@ sp_oauth = spotipy.oauth2.SpotifyOAuth(
 @app.route('/login', methods=['GET'])
 def login():
     auth_url = sp_oauth.get_authorize_url()
-    return redirect(auth_url)
+    return jsonify({"auth_url": auth_url})
 
 
 @app.route('/callback')
@@ -73,7 +75,7 @@ def callback():
         #     'expires_at': expire_time
         # }))
         driver.set_sp_object(sp)
-        return f'Logged in as {user["display_name"]}'
+        return f'Logged in as {user["display_name"]}', user["display_name"]
     except Exception as e:
         return f'An error occurred: {e}', 500
 
@@ -112,17 +114,17 @@ def begin_process(goodies):
     driver.harvest(goodies)
 
 
-def get_spotify_client(user_id):
-    if not redis_client:
-        raise Exception('Redis server not available')
-
-    token_info = json.loads(redis_client.get(user_id))
-    if token_info['expires_at'] - int(time.time()) < 60:
-        # Token has expired, refresh it
-        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
-        redis_client.set(user_id, json.dumps(token_info))
-
-    return spotipy.Spotify(auth=token_info['access_token'])
+# def get_spotify_client(user_id):
+#     if not redis_client:
+#         raise Exception('Redis server not available')
+#
+#     token_info = json.loads(redis_client.get(user_id))
+#     if token_info['expires_at'] - int(time.time()) < 60:
+#         # Token has expired, refresh it
+#         token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+#         redis_client.set(user_id, json.dumps(token_info))
+#
+#     return spotipy.Spotify(auth=token_info['access_token'])
 
 
 if __name__ == '__main__':
