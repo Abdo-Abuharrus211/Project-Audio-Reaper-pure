@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
 
 
@@ -59,25 +59,27 @@ def callback():
     if not code:
         return 'Authorization failed', 401
     try:
-        token_info = sp_oauth.get_access_token()
+        token_info = sp_oauth.get_access_token(code)
         access_token = token_info['access_token']
-        refresh_token = token_info['refresh_token']
-        expire_time = token_info['expires_at']
-
         sp = spotipy.Spotify(auth=access_token)
+        driver.set_sp_object(sp)
+
+        # Access user data using the Spotify object
         user = sp.current_user()
-        # Store tokens in Redis
-        user_id = user['id']
+        return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
+    except Exception as e:
+        return f'An error occurred: {e}', 500
+
         # TODO: Uncomment the redis stuff when deploying
         # redis_client.set(user_id, json.dumps({
         #     'access_token': access_token,
         #     'refresh_token': refresh_token,
         #     'expires_at': expire_time
         # }))
-        driver.set_sp_object(sp)
-        return f'Logged in as {user["display_name"]}', user["display_name"]
-    except Exception as e:
-        return f'An error occurred: {e}', 500
+    #     driver.set_sp_object(sp)
+    #     return f'Logged in as {user["display_name"]}', user["display_name"]
+    # except Exception as e:
+    #     return f'An error occurred: {e}', 500
 
 
 @app.route('/setPlaylistName/<name>', methods=['POST'])
