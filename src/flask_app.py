@@ -21,7 +21,6 @@ api = Api(app)
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
 
-
 # instantiating the driver
 driver = Driver()
 # Configure Redis
@@ -112,6 +111,7 @@ def send_failed():
     return jsonify(failed)
 
 
+# TODO: Refactor this awful two liner
 def begin_process(goodies):
     driver.harvest(goodies)
 
