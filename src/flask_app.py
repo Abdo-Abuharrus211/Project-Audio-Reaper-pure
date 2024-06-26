@@ -20,21 +20,21 @@ api = Api(app)
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
-
 # instantiating the driver
 driver = Driver()
+
 # Configure Redis
-# try:
-#     redis_client = redis.StrictRedis(
-#         host=os.getenv('REDIS_HOST'),
-#         port=int(os.getenv('REDIS_PORT')),
-#         db=0,
-#         decode_responses=True
-#     )
-#     redis_client.ping()  # Check if Redis server is reachable
-# except redis.ConnectionError as e:
-#     print(f"Could not connect to Redis: {e}")
-#     redis_client = None
+try:
+    redis_client = redis.StrictRedis(
+        host=os.getenv('REDIS_HOST'),
+        port=int(os.getenv('REDIS_PORT')),
+        db=0,
+        decode_responses=True
+    )
+    redis_client.ping()  # Check if Redis server is reachable
+except redis.ConnectionError as e:
+    print(f"Could not connect to Redis: {e}")
+    redis_client = None
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -62,23 +62,21 @@ def callback():
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         driver.set_sp_object(sp)
-
-        # Access user data using the Spotify object
+        if token_info:
+            # Store the tokens in Redis with the user_id as the key
+            user_id = token_info['id']  # Adjust based on actual token response structure
+            redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
         return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
     except Exception as e:
         return f'An error occurred: {e}', 500
 
-        # TODO: Uncomment the redis stuff when deploying
-        # redis_client.set(user_id, json.dumps({
-        #     'access_token': access_token,
-        #     'refresh_token': refresh_token,
-        #     'expires_at': expire_time
-        # }))
-    #     driver.set_sp_object(sp)
-    #     return f'Logged in as {user["display_name"]}', user["display_name"]
-    # except Exception as e:
-    #     return f'An error occurred: {e}', 500
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    user_id = request.form['user_id']  # Assuming you send user_id to identify the session
+    redis_client.delete(user_id)  # Remove the token from Redis
+    return jsonify({'message': 'Logged out successfully'})
 
 
 @app.route('/setPlaylistName/<name>', methods=['POST'])
@@ -95,7 +93,7 @@ def receive_metadata():
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
-    driver.harvest(data)
+    begin_process(data)
     return jsonify({"message": "Metadata received"})
 
 
@@ -111,17 +109,9 @@ def send_failed():
     return jsonify(failed)
 
 
-# def get_spotify_client(user_id):
-#     if not redis_client:
-#         raise Exception('Redis server not available')
-#
-#     token_info = json.loads(redis_client.get(user_id))
-#     if token_info['expires_at'] - int(time.time()) < 60:
-#         # Token has expired, refresh it
-#         token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
-#         redis_client.set(user_id, json.dumps(token_info))
-#
-#     return spotipy.Spotify(auth=token_info['access_token'])
+# TODO: Refactor this awful two liner
+def begin_process(goodies):
+    driver.harvest(goodies)
 
 
 if __name__ == '__main__':
