@@ -43,7 +43,8 @@ my_redirect_uri = 'http://localhost:5000/callback'
 cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
 sp_oauth = spotipy.oauth2.SpotifyOAuth(
     client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
-    scope='playlist-modify-public playlist-modify-private playlist-read-private'
+    scope='playlist-modify-public playlist-modify-private playlist-read-private',
+    cache_handler=cache_handler
 )
 
 
