@@ -8,7 +8,7 @@ import time
 import redis
 import spotipy
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, session
 from flask_cors import CORS
 from flask_restful import Api
 
@@ -40,6 +40,7 @@ my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 my_redirect_uri = 'http://localhost:5000/callback'
 # Set up Spotify OAuth
+cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
 sp_oauth = spotipy.oauth2.SpotifyOAuth(
     client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
     scope='playlist-modify-public playlist-modify-private playlist-read-private'
@@ -62,7 +63,8 @@ def callback():
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         driver.set_sp_object(sp)
-        # if token_info:
+        if token_info:
+            session['token_info'] = token_info  # Store token info in session
         #     # Store the tokens in Redis with the user_id as the key
         #     user_id = token_info['id']  # Adjust based on actual token response structure
         #     redis_client.set(user_id, json.dumps(token_info))
@@ -74,8 +76,7 @@ def callback():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    # user_id = request.form['user_id']  # Assuming you send user_id to identify the session
-    # redis_client.delete(user_id)  # Remove the token from Redis
+    session.pop('token_info', None)
     return jsonify({'message': 'Logged out successfully'})
 
 
