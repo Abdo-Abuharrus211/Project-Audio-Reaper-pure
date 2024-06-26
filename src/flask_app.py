@@ -24,17 +24,17 @@ load_dotenv()
 driver = Driver()
 
 # Configure Redis
-try:
-    redis_client = redis.StrictRedis(
-        host=os.getenv('REDIS_HOST'),
-        port=int(os.getenv('REDIS_PORT')),
-        db=0,
-        decode_responses=True
-    )
-    redis_client.ping()  # Check if Redis server is reachable
-except redis.ConnectionError as e:
-    print(f"Could not connect to Redis: {e}")
-    redis_client = None
+# try:
+#     redis_client = redis.StrictRedis(
+#         host=os.getenv('REDIS_HOST'),
+#         port=int(os.getenv('REDIS_PORT')),
+#         db=0,
+#         decode_responses=True
+#     )
+#     redis_client.ping()  # Check if Redis server is reachable
+# except redis.ConnectionError as e:
+#     print(f"Could not connect to Redis: {e}")
+#     redis_client = None
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -62,10 +62,10 @@ def callback():
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         driver.set_sp_object(sp)
-        if token_info:
-            # Store the tokens in Redis with the user_id as the key
-            user_id = token_info['id']  # Adjust based on actual token response structure
-            redis_client.set(user_id, json.dumps(token_info))
+        # if token_info:
+        #     # Store the tokens in Redis with the user_id as the key
+        #     user_id = token_info['id']  # Adjust based on actual token response structure
+        #     redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
         return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
     except Exception as e:
@@ -74,8 +74,8 @@ def callback():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    user_id = request.form['user_id']  # Assuming you send user_id to identify the session
-    redis_client.delete(user_id)  # Remove the token from Redis
+    # user_id = request.form['user_id']  # Assuming you send user_id to identify the session
+    # redis_client.delete(user_id)  # Remove the token from Redis
     return jsonify({'message': 'Logged out successfully'})
 
 
