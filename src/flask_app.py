@@ -93,7 +93,7 @@ def receive_metadata():
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
-    begin_process(data)
+    driver.harvest(data)
     return jsonify({"message": "Metadata received"})
 
 
@@ -107,11 +107,6 @@ def send_results():
 def send_failed():
     failed = driver.get_failed()
     return jsonify(failed)
-
-
-# TODO: Refactor this awful two liner
-def begin_process(goodies):
-    driver.harvest(goodies)
 
 
 if __name__ == '__main__':
