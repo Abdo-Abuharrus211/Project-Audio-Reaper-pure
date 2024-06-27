@@ -9,6 +9,7 @@ import redis
 import spotipy
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, redirect, session
+from flask_session import Session
 from flask_cors import CORS
 from flask_restful import Api
 
@@ -17,6 +18,9 @@ from driver import Driver
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = './.flask_session/'
+Session(app)
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
@@ -70,6 +74,7 @@ def callback():
         #     user_id = token_info['id']  # Adjust based on actual token response structure
         #     redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
+        driver.set_username(user["display_name"])
         return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
     except Exception as e:
         return f'An error occurred: {e}', 500
@@ -78,7 +83,18 @@ def callback():
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('token_info', None)
+    session.clear()
+    driver.clear_spotify_object()
+    print(f"{driver.get_username()} is logged out.")
     return jsonify({'message': 'Logged out successfully'})
+    # try:
+    #     if session.get(['token_info']) is not None:
+    #         session.pop('token_info', None)
+    #         return jsonify({'message': 'Logged out successfully'})
+    #     elif session.get(['token_info']) is None:
+    #         return jsonify({'message': 'Error: User not logged in!'})
+    # except Exception as e:
+    #     return jsonify({'message': f"Error logging out: {e}"}), 500
 
 
 @app.route('/setPlaylistName/<name>', methods=['POST'])
@@ -109,6 +125,12 @@ def send_results():
 def send_failed():
     failed = driver.get_failed()
     return jsonify(failed)
+
+
+@app.route('/getDisplayName', methods=['GET'])
+def send_display_name():
+    name = driver.get_username()
+    return jsonify(name)
 
 
 if __name__ == '__main__':
