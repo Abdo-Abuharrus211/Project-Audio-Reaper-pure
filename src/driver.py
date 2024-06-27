@@ -17,6 +17,7 @@ class Driver:
     def __init__(self):
         self.sp = None
         self.playlist_name = None
+        self.username = None
         self.metadata = None
         self.added = None
         self.failed = None
@@ -50,3 +51,13 @@ class Driver:
 
     def set_metadata(self, data):
         self.metadata = data
+
+    def set_username(self, name):
+        self.username = name
+
+    def get_username(self):
+        return self.username
+
+    def clear_spotify_object(self):
+        self.sp = None
+
