@@ -83,6 +83,7 @@ def callback():
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('token_info', None)
+    session.pop('auth_manager_state', None)
     session.clear()
     driver.clear_spotify_object()
     print(f"{driver.get_username()} is logged out.")
