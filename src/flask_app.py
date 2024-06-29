@@ -109,11 +109,15 @@ def register_playlist(name):
 
 @app.route('/receiveMetadata', methods=['POST'])
 def receive_metadata():
-    data = request.get_json()
-    if not data:
-        return jsonify({"message": "Data not valid"}), 400
-    driver.harvest(data)
-    return jsonify({"message": "Metadata received"})
+    try:
+        if driver.get_sp_object() is not None:
+            data = request.get_json()
+            if not data:
+                return jsonify({"message": "Data not valid"}), 400
+            driver.harvest(data)
+            return jsonify({"message": "Metadata received"})
+    except Exception as e:
+        return f'An error occurred: {e}', 500
 
 
 @app.route('/getResults', methods=['GET'])

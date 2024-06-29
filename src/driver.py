@@ -43,6 +43,9 @@ class Driver:
     def get_failed(self):
         return self.failed
 
+    def get_sp_object(self):
+        return self.sp
+
     def set_sp_object(self, spot_obj):
         self.sp = spot_obj
 
