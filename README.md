@@ -1,4 +1,4 @@
-## Project Audio Reaper
+## Project Audio Reaper©
 
 #### Author: Abdulqadir Abuharrus
 
@@ -37,3 +37,7 @@ To create a playlist of these songs on Spotify.
 - [X] Docstrings for all classes and methods
 - [X] Configure web app backend using flask
 - [ ] Write documentation and instructions for use in the README.md file
+
+
+---
+© Copyright 2024. Abdulqadir Abuharrus
