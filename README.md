@@ -1,4 +1,4 @@
-## Project Audio Reaper
+## Project Audio Reaper©
 
 #### Author: Abdulqadir Abuharrus
 
@@ -35,5 +35,9 @@ To create a playlist of these songs on Spotify.
 - [X] Write a function to retry again with the songs that were not found (aka the failures)
 - [ ] Retry when timed out
 - [X] Docstrings for all classes and methods
-- [ ] Configure web app backend using flask
+- [X] Configure web app backend using flask
 - [ ] Write documentation and instructions for use in the README.md file
+
+
+---
+© Copyright 2024. Abdulqadir Abuharrus
