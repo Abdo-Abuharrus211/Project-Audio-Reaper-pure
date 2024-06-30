@@ -140,4 +140,4 @@ def send_display_name():
 
 if __name__ == '__main__':
     # the debug set to true logs stuff to the console, so we can debug (only when developing)
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
