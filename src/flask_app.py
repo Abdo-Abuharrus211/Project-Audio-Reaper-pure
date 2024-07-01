@@ -18,6 +18,7 @@ from driver import Driver
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
+app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
 Session(app)
