@@ -18,6 +18,7 @@ from driver import Driver
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
+app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
 Session(app)
@@ -74,7 +75,7 @@ def callback():
         #     redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
         driver.set_username(user["display_name"])
-        return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
+        return redirect(f'https://ar-web-app.onrender.com/?displayName={user["display_name"]}')
     except Exception as e:
         return f'An error occurred: {e}', 500
 
