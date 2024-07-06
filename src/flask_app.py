@@ -22,8 +22,6 @@ api = Api(app)
 app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 Session(app)
 
@@ -45,6 +43,13 @@ driver = Driver()
 # except redis.ConnectionError as e:
 #     print(f"Could not connect to Redis: {e}")
 #     redis_client = None
+
+# TODO set the following:
+#  session['spotify_object'] = sp
+#  session['username'] = user["display_name"
+#  Move the instantiation of driver and sp out of the global scope
+#  Remove username and sp from the driver
+#  Review the login flow, may need to 'check' if user is remembered and then instantiate...
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -91,7 +96,8 @@ def logout():
     session.pop('token_info', None)
     session.pop('auth_manager_state', None)
     session.clear()
-    sp_oauth.cache_handler.__new__()
+    for key in list(session.keys()):
+        session.pop(key)
     driver.clear_spotify_object()
     print(f"{driver.get_username()} is logged out.")
     return jsonify({'message': 'Logged out successfully'})
