@@ -53,7 +53,7 @@ driver = Driver()
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-my_redirect_uri = 'http://localhost:5000/callback'
+my_redirect_uri = 'https://project-audio-reaper-pure-4.onrender.com/callback'
 # Set up Spotify OAuth
 cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
 sp_oauth = spotipy.oauth2.SpotifyOAuth(
@@ -86,7 +86,7 @@ def callback():
         #     redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
         driver.set_username(user["display_name"])
-        return redirect(f'http://localhost:9000/?displayName={user["display_name"]}')
+        return redirect(f'https://ar-web-app.onrender.com/?displayName={user["display_name"]}')
     except Exception as e:
         return f'An error occurred: {e}', 500
 
