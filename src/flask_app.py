@@ -4,6 +4,7 @@ This is the backend app, built using flask.
 import json
 import os
 import time
+from datetime import timedelta
 
 import redis
 import spotipy
@@ -21,7 +22,11 @@ api = Api(app)
 app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 Session(app)
+
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
@@ -86,6 +91,7 @@ def logout():
     session.pop('token_info', None)
     session.pop('auth_manager_state', None)
     session.clear()
+    sp_oauth.cache_handler.__new__()
     driver.clear_spotify_object()
     print(f"{driver.get_username()} is logged out.")
     return jsonify({'message': 'Logged out successfully'})
