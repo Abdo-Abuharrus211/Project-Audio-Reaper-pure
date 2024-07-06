@@ -24,7 +24,6 @@ Session(app)
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
-# instantiating the driver
 driver = Driver()
 
 # Configure Redis
