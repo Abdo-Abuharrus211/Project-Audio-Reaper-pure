@@ -84,6 +84,8 @@ def callback():
 def logout():
     session.pop('token_info', None)
     session.pop('auth_manager_state', None)
+    for key in list(session.keys()):
+        session.pop(key)
     session.clear()
     driver.clear_spotify_object()
     print(f"{driver.get_username()} is logged out.")
