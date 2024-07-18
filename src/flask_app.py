@@ -13,12 +13,15 @@ from flask import Flask, request, jsonify, redirect, session
 from flask_session import Session
 from flask_cors import CORS
 from flask_restful import Api
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 
 from driver import Driver
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api = Api(app)
+app.config['JWT_SECRET_KEY'] = os.urandom(24)
+jwt = JWTManager(app)
 app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
@@ -28,8 +31,6 @@ Session(app)
 # CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
-# instantiating the driver
-driver = Driver()
 
 # Configure Redis
 # try:
@@ -44,28 +45,29 @@ driver = Driver()
 #     print(f"Could not connect to Redis: {e}")
 #     redis_client = None
 
-# TODO set the following:
-#  session['spotify_object'] = sp
-#  session['username'] = user["display_name"
+my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
+my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+my_redirect_uri = 'http://localhost:5000/callback'
+# Set up Spotify OAuth
+cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
+
+
+# TODO: set the following:
 #  Move the instantiation of driver and sp out of the global scope
+#   session['spotify_object'] = sp
+#   session['username'] = user["display_name"
 #  Remove username and sp from the driver
 #  Review the login flow, may need to 'check' if user is remembered and then instantiate...
 
-my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
-my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-my_redirect_uri = 'https://project-audio-reaper-pure-4.onrender.com/callback'
-# Set up Spotify OAuth
-cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
-sp_oauth = spotipy.oauth2.SpotifyOAuth(
-    client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
-    scope='playlist-modify-public playlist-modify-private playlist-read-private',
-    cache_handler=cache_handler
-)
-
-
 @app.route('/login', methods=['GET'])
 def login():
+    sp_oauth = spotipy.oauth2.SpotifyOAuth(
+        client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
+        scope='playlist-modify-public playlist-modify-private playlist-read-private',
+        cache_handler=cache_handler
+    )
     auth_url = sp_oauth.get_authorize_url()
+    session['sp_oauth'] = sp_oauth
     return jsonify({"auth_url": auth_url})
 
 
@@ -75,18 +77,25 @@ def callback():
     if not code:
         return 'Authorization failed', 401
     try:
+        sp_oauth = session.get('spotify_object')
+        if not sp_oauth:
+            return 'Session Expired', 401
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
-        driver.set_sp_object(sp)
-        if token_info:
-            session['token_info'] = token_info  # Store token info in session
+        user = sp.current_user()
+        username = user['display_name']
+
+        # Create user dictionary in session
+        user_session_dictionary = {'display_name': username, 'sp_obj': sp, 'driver': Driver()}
+
         #     # Store the tokens in Redis with the user_id as the key
         #     user_id = token_info['id']  # Adjust based on actual token response structure
         #     redis_client.set(user_id, json.dumps(token_info))
-        user = sp.current_user()
-        driver.set_username(user["display_name"])
-        return redirect(f'https://ar-web-app.onrender.com/?displayName={user["display_name"]}')
+        print(session[user]['display_name'] + "IS ALIVE!")
+        session[username] = user_session_dictionary
+        session[username]['driver'].set_username(username)
+        return redirect(f'http://localhost:9000/?displayName={username}')
     except Exception as e:
         return f'An error occurred: {e}', 500
 
@@ -98,8 +107,6 @@ def logout():
     session.clear()
     for key in list(session.keys()):
         session.pop(key)
-    driver.clear_spotify_object()
-    print(f"{driver.get_username()} is logged out.")
     return jsonify({'message': 'Logged out successfully'})
     # try:
     #     if session.get(['token_info']) is not None:
