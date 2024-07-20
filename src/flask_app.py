@@ -88,7 +88,6 @@ def callback():
 
         # Create user dictionary in session
         user_session_dictionary = {'display_name': username, 'sp_obj': sp, 'driver': Driver()}
-
         #     # Store the tokens in Redis with the user_id as the key
         #     user_id = token_info['id']  # Adjust based on actual token response structure
         #     redis_client.set(user_id, json.dumps(token_info))
@@ -100,14 +99,23 @@ def callback():
         return f'An error occurred: {e}', 500
 
 
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.pop('token_info', None)
-    session.pop('auth_manager_state', None)
-    session.clear()
-    for key in list(session.keys()):
-        session.pop(key)
-    return jsonify({'message': 'Logged out successfully'})
+@app.route('/logout/<username>', methods=['POST'])
+def logout(username):
+    # name = request.args.get('username')
+    if session.get(username):
+        try:
+            session.pop(username, None)
+            # session.pop('token_info', None)
+            # session.pop('auth_manager_state', None)
+            session.clear()
+            for key in list(session.keys()):
+                session.pop(key)
+            # TODO: inform frontend to clear local session and storage
+            return jsonify({'message': 'Logged out successfully'})
+        except Exception as e:
+            return f'An error occurred: {e}', 401
+    else:
+        return 'Session expired or user not logged in...'
     # try:
     #     if session.get(['token_info']) is not None:
     #         session.pop('token_info', None)
@@ -118,43 +126,50 @@ def logout():
     #     return jsonify({'message': f"Error logging out: {e}"}), 500
 
 
-@app.route('/setPlaylistName/<name>', methods=['POST'])
-def register_playlist(name):
-    if not name or type(name) is not str:
-        return jsonify({"message": "Non valid value" + name}), 400
-    print("Playlist is called: " + name)
-    driver.set_playlist_name(name)
-    return jsonify({"message": "Playlist name set to " + name})
+@app.route('/setPlaylistName/<username>/<name>', methods=['POST'])
+def register_playlist(name, username):
+    if session.get(username):
+        if not name or type(name) is not str:
+            return jsonify({"message": "Non valid value" + name}), 400
+        print("Playlist is called: " + name)
+        session[username]['driver'].set_playlist_name(name)
+        return jsonify({"message": "Playlist name set to " + name})
+    else:
+        return 'Session expired or user not logged in'
 
 
-@app.route('/receiveMetadata', methods=['POST'])
-def receive_metadata():
-    try:
-        if driver.get_sp_object() is not None:
-            data = request.get_json()
-            if not data:
-                return jsonify({"message": "Data not valid"}), 400
-            driver.harvest(data)
-            return jsonify({"message": "Metadata received"})
-    except Exception as e:
-        return f'An error occurred: {e}', 500
+@app.route('/<username>/receiveMetadata', methods=['POST'])
+def receive_metadata(username):
+    if session[username]:
+        try:
+            if session[username]['driver'].get_sp_object() is not None:
+                data = request.get_json()
+                if not data:
+                    return jsonify({"message": "Data not valid"}), 400
+                session[username]['driver'].harvest(data)
+                return jsonify({"message": "Metadata received"})
+        except Exception as e:
+            return f'An error occurred: {e}', 500
+    else:
+        return 'Session expired or user not logged in'
 
 
-@app.route('/getResults', methods=['GET'])
-def send_results():
-    results = driver.get_added()
+# TODO: add user checks for the following functions
+@app.route('/<username>/getResults', methods=['GET'])
+def send_results(username):
+    results = session[username]['driver'].get_added()
     return jsonify(results)
 
 
-@app.route('/getFailed', methods=['GET'])
-def send_failed():
-    failed = driver.get_failed()
+@app.route('/<username>/getFailed', methods=['GET'])
+def send_failed(username):
+    failed = session[username]['driver'].get_failed()
     return jsonify(failed)
 
 
 @app.route('/getDisplayName', methods=['GET'])
-def send_display_name():
-    name = driver.get_username()
+def send_display_name(username):
+    name = session[username]['driver'].get_username()
     return jsonify(name)
 
 
