@@ -52,15 +52,8 @@ class Driver:
     def set_playlist_name(self, name):
         self.playlist_name = name
 
-    def set_metadata(self, data):
-        self.metadata = data
-
     def set_username(self, name):
         self.username = name
 
     def get_username(self):
         return self.username
-
-    def clear_spotify_object(self):
-        self.sp = None
-
