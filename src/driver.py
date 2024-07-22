@@ -2,14 +2,8 @@
 This module will kick the process in motion (substituting main.py from the standalone program)
 """
 
-import os
-from dotenv import load_dotenv
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-
 from ai_filename_process import process_response, invoke_prompt_to_ai
-from fileIO import select_folder, media_file_finder, metadata_harvester, failed_csv_writer, read_failed_tracks, \
-    organize_harvest
+from fileIO import organize_harvest
 from spotify_api_handler import get_or_create_playlist, search_songs_not_in_playlist, add_songs_to_playlist
 
 
@@ -43,8 +37,8 @@ class Driver:
     def get_failed(self):
         return self.failed
 
-    def get_sp_object(self):
-        return self.sp
+    # def get_sp_object(self):
+    #     return self.sp
 
     def set_sp_object(self, spot_obj):
         self.sp = spot_obj
