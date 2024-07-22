@@ -16,12 +16,12 @@ from driver import Driver
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-# TODO: get a secret key generated
-# app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY')
+# app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY') # TODO: get a secret key generated
 api = Api(app)
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = redis.Redis(host='localhost', port=6379)
+redis_client = redis.Redis(host='localhost', port=6379)
+app.config['SESSION_REDIS'] = redis_client
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 Session(app)
 
@@ -32,7 +32,7 @@ load_dotenv()
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 my_redirect_uri = 'http://localhost:5000/callback'
-cache_handler = spotipy.cache_handler.RedisCacheHandler(session)  # TODO: Double check this
+cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)  # TODO: Double check this
 
 
 @app.route('/login', methods=['GET'])
@@ -81,6 +81,7 @@ def logout(username):
         try:
             session.pop(username)
             session.pop('user_data', None)
+            session.pop('spotify_auth_state', None)
             return jsonify({'message': 'Logged out successfully'})
         except Exception as e:
             return f'An error occurred: {e}', 500
