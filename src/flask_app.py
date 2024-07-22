@@ -22,10 +22,11 @@ api = Api(app)
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_REDIS'] = redis.Redis(host='localhost', port=6379)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 Session(app)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
+# CORS(app, resources={r"/*": {"origins": "http://myfrontend.com"}})
 load_dotenv()
 
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
@@ -61,13 +62,15 @@ def callback():
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         user = sp.current_user()
-        # TODO: Revise what's stored in session (How to organize the key-value pairs...)
         username = user['display_name']
         # Create user dictionary in session
-        user_session_dictionary = {'token': token_info, 'display_name': username}
+        user_data = {'token': token_info, 'username': username,
+                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
         print(session[user]['display_name'] + "IS ALIVE!")
-        session[username] = user_session_dictionary
+        session[username] = user_data
         return redirect(f'http://localhost:9000/?displayName={username}')
+    except spotipy.SpotifyOauthError as s:
+        return f'A Spotify Oauth error occurred: {s}', 401
     except Exception as e:
         return f'An error occurred: {e}', 500
 
@@ -76,6 +79,7 @@ def callback():
 def logout(username):
     if session[username]:
         try:
+            session.pop(username)
             session.pop('user_data', None)
             return jsonify({'message': 'Logged out successfully'})
         except Exception as e:
@@ -89,7 +93,7 @@ def register_playlist(name, username):
     if session[username]:
         if not name or type(name) is not str:
             return jsonify({"message": "Non valid value" + name}), 400
-        # TODO: Figure out how to set the playlist name now that there's not Driver instance
+        session.get('user_data')['playlist_name'] = name
         print("Playlist is called: " + name)
         return jsonify({"message": "Playlist name set to " + name})
     else:
@@ -100,40 +104,51 @@ def register_playlist(name, username):
 def receive_metadata(username):
     if session[username]:
         try:
-            user_session = session[username]
+            user_session = session['user_data']
+            print(user_session)
             token_info = user_session['token_info']
             sp = spotipy.Spotify(auth=token_info['access_token'])
             driver = Driver()
-            driver.set_username(user_session['driver']['username'])
+            driver.set_username(session['username'])
+            driver.set_playlist_name(user_session['playlist_name'])
             driver.set_sp_object(sp)
             data = request.get_json()
             if not data:
                 return jsonify({"message": "Data not valid"}), 400
-            session[username]['driver'].harvest(data)
+            # Todo: start process here
+            driver.harvest(data)
+            session['failed_songs'] = driver.get_failed()
             return jsonify({"message": "Metadata received"})
         except Exception as e:
             return f'An error occurred: {e}', 500
     else:
-        return 'Session expired or user not logged in'
+        return 'Session expired or user not logged in', 403
 
 
-# TODO: add user checks for the following functions and where to store the data to retrieve it?
 @app.route('/<username>/getResults', methods=['GET'])
 def send_results(username):
-    results = session[username]['driver'].get_added()
-    return jsonify(results)
+    if session[username]:
+        results = session.get('added_songs')
+        return jsonify(results)
+    else:
+        return 'Session expired or user not logged in', 403
 
 
 @app.route('/<username>/getFailed', methods=['GET'])
 def send_failed(username):
-    failed = session[username]['driver'].get_failed()
-    return jsonify(failed)
+    if session[username]:
+        failed = session.get('failed_songs')
+        return jsonify(failed)
+    else:
+        return 'Session expired or user not logged in', 403
 
 
 @app.route('/getDisplayName', methods=['GET'])
-def send_display_name(username):
-    name = session[username]['driver'].get_username()
-    return jsonify(name)
+def send_display_name():
+    if session['user_data']:
+        return jsonify(session.get('user_data')['username'])
+    else:
+        return 'Session expired or user not logged in', 403
 
 
 if __name__ == '__main__':
