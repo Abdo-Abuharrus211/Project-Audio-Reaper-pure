@@ -15,12 +15,12 @@ from flask_restful import Api
 from driver import Driver
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
-# app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY') # TODO: get a secret key generated
+backup_secret_key = os.urandom(24)
+app.secret_key = os.getenv('SECRET_KEY', backup_secret_key)
 api = Api(app)
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = 'redis'
-redis_client = redis.Redis(host='localhost', port=6379)
+redis_client = redis.from_url(os.getenv('REDIS_HOST'))
 app.config['SESSION_REDIS'] = redis_client
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 Session(app)
@@ -67,6 +67,7 @@ def callback():
         user_data = {'token': token_info, 'username': username,
                      'playlist_name': None, 'added_songs': None, 'failed_songs': None}
         print(session[user]['display_name'] + "IS ALIVE!")
+        # TODO: Potentially causing Error 500 Unhashable...
         session[username] = user_data
         return redirect(f'http://localhost:9000/?displayName={username}')
     except spotipy.SpotifyOauthError as s:
@@ -89,6 +90,7 @@ def logout(username):
         return 'Session expired or user not logged in.', 403
 
 
+# TODO: Add exception handling here and beyond
 @app.route('/setPlaylistName/<username>/<name>', methods=['POST'])
 def register_playlist(name, username):
     if session[username]:
