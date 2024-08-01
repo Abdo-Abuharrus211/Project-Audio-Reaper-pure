@@ -32,7 +32,7 @@ load_dotenv()
 my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 my_redirect_uri = 'http://localhost:5000/callback'
-cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)  # TODO: Double check this
+cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
 
 
 @app.route('/login', methods=['GET'])
