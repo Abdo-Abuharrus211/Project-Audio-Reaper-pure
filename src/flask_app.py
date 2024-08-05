@@ -23,9 +23,10 @@ app.config['SESSION_PERMANENT'] = False
 redis_client = redis.from_url(os.getenv('REDIS_HOST'))
 app.config['SESSION_REDIS'] = redis_client
 
-app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+# TODO: Determine if these configs are needed
+# app.config['SESSION_USE_SIGNER'] = True
+# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
+# app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 
@@ -51,12 +52,10 @@ def get_user_data_from_session(user_id):
         return None
 
 
-# def set_user_data_in_session(user_id, data):
-#     # TODO: session data doesn't persist in session when this is called from within
-#     #  callback fnc but okay via the test_add
-#     session[str(user_id)] = str(data)
-#     session.modified = True
-#     print(f'session data added:\n{session.get(user_id)}')
+def set_user_data_in_session(user_id, data):
+    session[f'user_{user_id}'] = data
+    session.modified = True
+    print(f'session data added:\n{session.get(user_id)}')
 
 
 @app.route('/login', methods=['GET'])
@@ -78,30 +77,6 @@ def callback():
     if not code:
         return 'Authorization failed', 401
     try:
-        # sp_oauth = spotipy.oauth2.SpotifyOAuth(
-        #     client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
-        #     scope='playlist-modify-public playlist-modify-private playlist-read-private',
-        #     cache_handler=cache_handler
-        # )
-        # token_info = sp_oauth.get_access_token(code)
-        # access_token = token_info['access_token']
-        #
-        # sp = spotipy.Spotify(auth=access_token)
-        # user = sp.current_user()
-        # username = user['display_name']
-        # user_id = user['id']
-        # print("The user ID is " + user_id)
-        #
-        # user_data = {'token': token_info, 'username': username,
-        #              'playlist_name': None, 'added_songs': None, 'failed_songs': None}
-        # # TODO: figure out why these don't persist after redirect to homepage (frontend)
-        # session[f'user_{user_id}'] = user_data
-        # session['BOB'] = 'BASED'
-        # big_weiner(user_id, user_data)
-        # session[f'user_{user_id}_token'] = token_info  # most important item is the persistence of the token
-        # set_user_data_in_session(user_id, user_data)
-        # session.modified = True
-
         return jsonify(f'http://localhost:9000/?code={code}')
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
@@ -157,7 +132,7 @@ def receive_metadata(user_id):
             if not data:
                 return jsonify({"message": "Data not valid"}), 400
             driver.harvest(data)
-            session['failed_songs'] = driver.get_failed()
+            # TODO: Do I need to update data here?
             set_user_data_in_session(user_id, user_data)
             return jsonify({"message": "Metadata received"})
         except Exception as e:
@@ -231,7 +206,7 @@ def get_session(user_id):
     return jsonify(data)
 
 
-@app.route('/test_id/<code>', methods=['POST'])
+@app.route('/exchangeCodeSession/<code>', methods=['POST'])
 def big_weiner(code):
     if not code:
         return 'Authorization Failed', 401
@@ -250,7 +225,7 @@ def big_weiner(code):
                      'playlist_name': None, 'added_songs': None, 'failed_songs': None}
         print(f'Weinerish data:\n{user_data}')
         session[f"user_{user['id']}"] = user_data
-        return jsonify('Success')
+        return jsonify('Successfully exchanged token for user data'), 200
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
