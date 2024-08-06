@@ -36,6 +36,8 @@ To create a playlist of these songs on Spotify.
 - [ ] Retry when timed out
 - [X] Docstrings for all classes and methods
 - [X] Configure web app backend using flask
+- [ ] Make helper function for SP object creating per user, such that routes work for distinct users
+- [ ] Write Docstrings for functions in flask_app.py
 - [ ] Write documentation and instructions for use in the README.md file
 
 
