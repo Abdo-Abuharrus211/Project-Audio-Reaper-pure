@@ -66,8 +66,7 @@ def login():
         cache_handler=cache_handler
     )
     auth_url = sp_oauth.get_authorize_url()
-    session['spotify_auth_state'] = sp_oauth.state  # This persists as it's before the callback route
-
+    session['spotify_auth_state'] = sp_oauth.state
     return jsonify({"auth_url": auth_url})  # auth code is exchanged for a token, then redirects to callback URI
 
 
@@ -190,6 +189,7 @@ def send_display_name(user_id):
         return 'Session expired or user not logged in', 403
 
 
+# Test routes ahead
 @app.route('/debug/sessions', methods=['GET'])
 def debug_sessions():
     if app.debug:
@@ -229,12 +229,6 @@ def get_session(user_id):
 @app.route('/test_clear', methods=['POST'])
 def clear_session():
     session.clear()
-    return jsonify('Success')
-
-
-@app.route('/test_edit', methods=['PUT'])
-def small_weiner():
-    session[f"user_{'216duqlyymfjzxf2pirmwc7kq'}"]['token'] = 'Tugma'
     return jsonify('Success')
 
 
