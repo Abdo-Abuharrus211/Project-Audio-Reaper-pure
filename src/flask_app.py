@@ -52,10 +52,10 @@ def get_user_data_from_session(user_id):
         return None
 
 
-def set_user_data_in_session(user_id, data):
+def update_user_data_in_session(user_id, data):
     session[f'user_{user_id}'] = data
     session.modified = True
-    print(f'session data added:\n{session.get(user_id)}')
+    print(f'session data updated:\n{session.get(user_id)}')
 
 
 @app.route('/login', methods=['GET'])
@@ -69,6 +69,29 @@ def login():
     session['spotify_auth_state'] = sp_oauth.state  # This persists as it's before the callback route
 
     return jsonify({"auth_url": auth_url})  # auth code is exchanged for a token, then redirects to callback URI
+
+
+@app.route('/exchangeCodeSession/<code>', methods=['POST'])
+def big_weiner(code):
+    if not code:
+        return 'Authorization Failed', 401
+    try:
+        sp_oauth = spotipy.oauth2.SpotifyOAuth(
+            client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
+            scope='playlist-modify-public playlist-modify-private playlist-read-private',
+            cache_handler=cache_handler
+        )
+        token_info = sp_oauth.get_access_token(code)
+        access_token = token_info['access_token']
+        sp = spotipy.Spotify(auth=access_token)
+        user = sp.current_user()
+        user_data = {'token': token_info, 'username': user['display_name'],
+                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
+        session[f"user_{user['id']}"] = user_data
+        return jsonify('Successfully exchanged token for user data'), 200
+    except spotipy.SpotifyOauthError as s:
+        app.logger.error(f"Spotify OAuth error: {s}")
+        return f'A Spotify OAuth error occurred: {s}', 401
 
 
 @app.route('/callback', methods=['GET'])
@@ -88,13 +111,10 @@ def callback():
 
 @app.route('/logout/<user_id>', methods=['POST'])
 def logout(user_id):
-    print(session)
-    print(session.get(f'user_{user_id}'))
     user_data = session.get(f'user_{user_id}')
-    # user_data = session[f'user_{user_id}']
     if user_data:
         try:
-            session.pop(user_id, None)
+            session.pop(f'user_{user_id}', None)
             session.pop('spotify_auth_state', None)
             return jsonify({'message': 'Logged out successfully'})
         except Exception as e:
@@ -120,6 +140,9 @@ def register_playlist(name, user_id):
 @app.route('/receiveMetadata/<user_id>', methods=['POST'])
 def receive_metadata(user_id):
     user_data = get_user_data_from_session(user_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "Data not valid"}), 400
     if user_data:
         try:
             token_info = user_data['token']
@@ -128,12 +151,9 @@ def receive_metadata(user_id):
             driver.set_username(user_data['username'])
             driver.set_playlist_name(user_data['playlist_name'])
             driver.set_sp_object(sp)
-            data = request.get_json()
-            if not data:
-                return jsonify({"message": "Data not valid"}), 400
             driver.harvest(data)
-            # TODO: Do I need to update data here?
-            set_user_data_in_session(user_id, user_data)
+            user_data['failed_songs'] = driver.get_failed()
+            update_user_data_in_session(user_id, user_data)  # update user data in session
             return jsonify({"message": "Metadata received"})
         except Exception as e:
             return f'An error occurred: {e}', 500
@@ -204,31 +224,6 @@ def add_session():
 def get_session(user_id):
     data = session.get(user_id)
     return jsonify(data)
-
-
-@app.route('/exchangeCodeSession/<code>', methods=['POST'])
-def big_weiner(code):
-    if not code:
-        return 'Authorization Failed', 401
-    try:
-        sp_oauth = spotipy.oauth2.SpotifyOAuth(
-            client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
-            scope='playlist-modify-public playlist-modify-private playlist-read-private',
-            cache_handler=cache_handler
-        )
-        token_info = sp_oauth.get_access_token(code)
-        access_token = token_info['access_token']
-        sp = spotipy.Spotify(auth=access_token)
-        user = sp.current_user()
-        print(f"User ID is {user['id']}")
-        user_data = {'token': token_info, 'username': user['display_name'],
-                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
-        print(f'Weinerish data:\n{user_data}')
-        session[f"user_{user['id']}"] = user_data
-        return jsonify('Successfully exchanged token for user data'), 200
-    except spotipy.SpotifyOauthError as s:
-        app.logger.error(f"Spotify OAuth error: {s}")
-        return f'A Spotify OAuth error occurred: {s}', 401
 
 
 @app.route('/test_clear', methods=['POST'])
