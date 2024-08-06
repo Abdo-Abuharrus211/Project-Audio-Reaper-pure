@@ -72,7 +72,7 @@ def login():
 
 
 @app.route('/exchangeCodeSession/<code>', methods=['POST'])
-def big_weiner(code):
+def add_user_data_to_session(code):
     if not code:
         return 'Authorization Failed', 401
     try:
