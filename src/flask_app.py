@@ -44,10 +44,10 @@ print('Redis Instance Running? ' + str(redis_client.ping()))
 
 
 def get_user_data_from_session(user_id):
-    # redundant but whatever, it's atomic...
     data = session.get(f'user_{user_id}')
+    print(type(data))
     if data:
-        return dict(data)
+        return data
     else:
         return None
 
