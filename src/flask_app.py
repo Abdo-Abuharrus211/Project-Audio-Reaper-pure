@@ -20,7 +20,7 @@ app.secret_key = os.getenv('SECRET_KEY', backup_secret_key)
 api = Api(app)
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
-redis_client = redis.from_url(os.getenv('REDIS_HOST'))
+redis_client = redis.from_url('redis://red-cqg1kp9u0jms7389ling:6379')
 app.config['SESSION_REDIS'] = redis_client
 
 # TODO: Determine if these configs are needed
