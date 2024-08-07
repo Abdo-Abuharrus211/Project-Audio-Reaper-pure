@@ -1,83 +1,118 @@
 """
-This is the backend app, built using flask.
+This is the backend, built using flask with redis for server-side sessions
 """
-import json
 import os
-import time
+from datetime import timedelta
 
-import redis
 import spotipy
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, redirect, session
 from flask_session import Session
+import redis
 from flask_cors import CORS
 from flask_restful import Api
 
 from driver import Driver
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+backup_secret_key = os.urandom(24)
+app.secret_key = os.getenv('SECRET_KEY', backup_secret_key)
 api = Api(app)
-app.config["SESSION_PERMANENT"] = False
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './.flask_session/'
-Session(app)
-# CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
-CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = False
+redis_client = redis.from_url(os.getenv('REDIS_HOST'))
+app.config['SESSION_REDIS'] = redis_client
+
+# TODO: Determine if these configs are needed
+# app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
+# app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
+
+server_session = Session(app)
+
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# CORS(app, resources={r"/*": {"origins": "http://myfrontend.com"}})
 load_dotenv()
+
 driver = Driver()
 
-# Configure Redis
-# try:
-#     redis_client = redis.StrictRedis(
-#         host=os.getenv('REDIS_HOST'),
-#         port=int(os.getenv('REDIS_PORT')),
-#         db=0,
-#         decode_responses=True
-#     )
-#     redis_client.ping()  # Check if Redis server is reachable
-# except redis.ConnectionError as e:
-#     print(f"Could not connect to Redis: {e}")
-#     redis_client = None
+MY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
+MY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+MY_REDIRECT_URI = 'http://localhost:5000/callback'
+cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
+print('Redis Instance Running? ' + str(redis_client.ping()))
 
-my_client_id = os.getenv('SPOTIFY_CLIENT_ID')
-my_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-my_redirect_uri = 'https://project-audio-reaper-pure-4.onrender.com/callback'
-# Set up Spotify OAuth
-cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
-sp_oauth = spotipy.oauth2.SpotifyOAuth(
-    client_id=my_client_id, client_secret=my_client_secret, redirect_uri=my_redirect_uri,
-    scope='playlist-modify-public playlist-modify-private playlist-read-private',
-    cache_handler=cache_handler
-)
+
+def update_user_data_in_session(user_id, data):
+    session[f'user_{user_id}'] = data
+    session.modified = True
+    print('session data updated')
 
 
 @app.route('/login', methods=['GET'])
 def login():
+    sp_oauth = spotipy.oauth2.SpotifyOAuth(
+        client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
+        scope='playlist-modify-public playlist-modify-private playlist-read-private',
+        cache_handler=cache_handler
+    )
     auth_url = sp_oauth.get_authorize_url()
-    return jsonify({"auth_url": auth_url})
+    session['spotify_auth_state'] = sp_oauth.state
+    return jsonify({"auth_url": auth_url})  # auth code is exchanged for a token, then redirects to callback URI
 
 
-@app.route('/callback')
+@app.route('/callback', methods=['GET'])
 def callback():
     code = request.args.get('code')
     if not code:
         return 'Authorization failed', 401
     try:
+        return redirect(f'http://localhost:9000/?code={code}')
+    except spotipy.SpotifyOauthError as s:
+        app.logger.error(f"Spotify OAuth error: {s}")
+        return f'A Spotify OAuth error occurred: {s}', 401
+    except Exception as e:
+        app.logger.error(f"An error occurred: {e}")
+        return f'An error occurred: {e}', 500
+
+
+@app.route('/logout/<user_id>', methods=['POST'])
+def logout(user_id):
+    user_data = session.get(f'user_{user_id}')
+    if user_data:
+        try:
+            session.pop(f'user_{user_id}', None)
+            session.pop('spotify_auth_state', None)
+            return jsonify({'message': 'Logged out successfully'})
+        except Exception as e:
+            return f'An error occurred: {e}', 500
+    else:
+        return 'Session expired or user not logged in.', 403
+
+
+@app.route('/exchangeCodeSession/<code>', methods=['POST'])
+def add_user_data_to_session(code):
+    if not code:
+        return 'Authorization Failed', 401
+    try:
+        sp_oauth = spotipy.oauth2.SpotifyOAuth(
+            client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
+            scope='playlist-modify-public playlist-modify-private playlist-read-private',
+            cache_handler=cache_handler
+        )
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
-        driver.set_sp_object(sp)
-        if token_info:
-            session['token_info'] = token_info  # Store token info in session
-        #     # Store the tokens in Redis with the user_id as the key
-        #     user_id = token_info['id']  # Adjust based on actual token response structure
-        #     redis_client.set(user_id, json.dumps(token_info))
         user = sp.current_user()
-        driver.set_username(user["display_name"])
-        return redirect(f'https://ar-web-app.onrender.com/?displayName={user["display_name"]}')
-    except Exception as e:
-        return f'An error occurred: {e}', 500
+        user_data = {'token': token_info, 'username': user['display_name'],
+                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
+        session[f"user_{user['id']}"] = user_data
+        return jsonify({'username': user['display_name'], 'userID': user['id']})
+    except spotipy.SpotifyOauthError as s:
+        app.logger.error(f"Spotify OAuth error: {s}")
+        return f'A Spotify OAuth error occurred: {s}', 401
 
 
 @app.route('/logout', methods=['POST'])
@@ -100,46 +135,117 @@ def logout():
     #     return jsonify({'message': f"Error logging out: {e}"}), 500
 
 
-@app.route('/setPlaylistName/<name>', methods=['POST'])
-def register_playlist(name):
-    if not name or type(name) is not str:
-        return jsonify({"message": "Non valid value" + name}), 400
-    print("Playlist is called: " + name)
-    driver.set_playlist_name(name)
-    return jsonify({"message": "Playlist name set to " + name})
+# TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
+@app.route('/setPlaylistName/<name>/<user_id>', methods=['POST'])
+def register_playlist(name, user_id):
+    user_data = session.get(f'user_{user_id}')
+    if user_data:
+        if not name or not isinstance(name, str):
+            return jsonify({"message": "Non valid value" + name}), 400
+        user_data['playlist_name'] = name
+        print("Playlist is called: " + name)
+        return jsonify({"message": "Playlist name set to " + name})
+    else:
+        return 'Session expired or user not logged in.', 403
 
 
-@app.route('/receiveMetadata', methods=['POST'])
-def receive_metadata():
-    try:
-        if driver.get_sp_object() is not None:
-            data = request.get_json()
-            if not data:
-                return jsonify({"message": "Data not valid"}), 400
+@app.route('/receiveMetadata/<user_id>', methods=['POST'])
+def receive_metadata(user_id):
+    user_data = session.get(f'user_{user_id}')
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "Data not valid"}), 400
+    if user_data:
+        try:
+            token_info = user_data['token']
+            sp = spotipy.Spotify(auth=token_info['access_token'])
+            driver = Driver()
+            driver.set_username(user_data['username'])
+            driver.set_playlist_name(user_data['playlist_name'])
+            driver.set_sp_object(sp)
             driver.harvest(data)
+            user_data['failed_songs'] = driver.get_failed()
+            update_user_data_in_session(user_id, user_data)  # update user data in session
             return jsonify({"message": "Metadata received"})
-    except Exception as e:
-        return f'An error occurred: {e}', 500
+        except Exception as e:
+            return f'An error occurred: {e}', 500
+    else:
+        return 'Session expired or user not logged in', 403
 
 
-@app.route('/getResults', methods=['GET'])
-def send_results():
-    results = driver.get_added()
-    return jsonify(results)
+@app.route('/getResults/<user_id>', methods=['GET'])
+def send_results(user_id):
+    user_data = session.get(f'user_{user_id}')
+    if user_data:
+        results = user_data.get('added_songs')
+        return jsonify(results)
+    else:
+        return 'Session expired or user not logged in', 403
 
 
-@app.route('/getFailed', methods=['GET'])
-def send_failed():
-    failed = driver.get_failed()
-    return jsonify(failed)
+@app.route('/getFailed/<user_id>', methods=['GET'])
+def send_failed(user_id):
+    user_data = session.get(f'user_{user_id}')
+    if user_data:
+        failed = user_data.get('failed_songs')
+        return jsonify(failed)
+    else:
+        return 'Session expired or user not logged in', 403
 
 
-@app.route('/getDisplayName', methods=['GET'])
-def send_display_name():
-    name = driver.get_username()
-    return jsonify(name)
+@app.route('/getDisplayName/<user_id>', methods=['GET'])
+def send_display_name(user_id):
+    user_data = session.get(f'user_{user_id}')
+    if user_data:
+        return jsonify(user_data['username'])
+    else:
+        return 'Session expired or user not logged in', 403
+
+
+# Test routes ahead
+@app.route('/debug/sessions', methods=['GET'])
+def debug_sessions():
+    if app.debug:
+        all_sessions = {}
+        for key in session.keys():
+            try:
+                value = session[key]
+                if isinstance(value, (str, int, float, bool, list, dict)):
+                    all_sessions[key] = value
+                else:
+                    all_sessions[key] = str(value)
+            except Exception as e:
+                all_sessions[key] = f"Error retrieving session data: {str(e)}"
+
+        return jsonify({
+            "current_sessions": all_sessions,
+            "session_interface": str(type(app.session_interface)),
+            "session_redis_url": str(app.config.get('SESSION_REDIS'))
+        })
+    else:
+        return jsonify({"error": "This endpoint is only available in debug mode"}), 403
+
+
+@app.route('/test_add', methods=['POST'])
+def add_session():
+    session['Citron'] = "Limon"
+    return jsonify('Success')
+
+
+@app.route('/test_get/<user_id>', methods=['GET'])
+def get_session(user_id):
+    data = session.get(user_id)
+    return data
+
+
+@app.route('/test_clear', methods=['POST'])
+def clear_session():
+    session.clear()
+    return jsonify('Success')
 
 
 if __name__ == '__main__':
     # the debug set to true logs stuff to the console, so we can debug (only when developing)
     app.run(debug=False, port=5000)
+    # remember to set debug to false when in prod
+    app.run(debug=True, port=5000)
