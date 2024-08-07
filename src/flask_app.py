@@ -25,14 +25,14 @@ app.config['SESSION_REDIS'] = redis_client
 
 # TODO: Determine if these configs are needed
 # app.config['SESSION_USE_SIGNER'] = True
-# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
 # app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 
 server_session = Session(app)
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 # CORS(app, resources={r"/*": {"origins": "http://myfrontend.com"}})
 load_dotenv()
 
@@ -45,7 +45,6 @@ print('Redis Instance Running? ' + str(redis_client.ping()))
 
 def get_user_data_from_session(user_id):
     data = session.get(f'user_{user_id}')
-    print(type(data))
     if data:
         return data
     else:
@@ -125,7 +124,7 @@ def add_user_data_to_session(code):
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
 @app.route('/setPlaylistName/<name>/<user_id>', methods=['POST'])
 def register_playlist(name, user_id):
-    user_data = get_user_data_from_session(user_id)
+    user_data = session.get(f'user_{user_id}')
     if user_data:
         if not name or not isinstance(name, str):
             return jsonify({"message": "Non valid value" + name}), 400
