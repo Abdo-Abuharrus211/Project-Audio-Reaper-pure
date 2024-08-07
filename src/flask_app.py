@@ -67,7 +67,7 @@ def callback():
     if not code:
         return 'Authorization failed', 401
     try:
-        return redirect(f'https://project-audio-reaper-pure-4.onrender.com/?code={code}')
+        return redirect(f'https://ar-web-app.onrender.com/?code={code}')
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
