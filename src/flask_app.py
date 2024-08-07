@@ -70,36 +70,13 @@ def login():
     return jsonify({"auth_url": auth_url})  # auth code is exchanged for a token, then redirects to callback URI
 
 
-@app.route('/exchangeCodeSession/<code>', methods=['POST'])
-def add_user_data_to_session(code):
-    if not code:
-        return 'Authorization Failed', 401
-    try:
-        sp_oauth = spotipy.oauth2.SpotifyOAuth(
-            client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
-            scope='playlist-modify-public playlist-modify-private playlist-read-private',
-            cache_handler=cache_handler
-        )
-        token_info = sp_oauth.get_access_token(code)
-        access_token = token_info['access_token']
-        sp = spotipy.Spotify(auth=access_token)
-        user = sp.current_user()
-        user_data = {'token': token_info, 'username': user['display_name'],
-                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
-        session[f"user_{user['id']}"] = user_data
-        return jsonify('Successfully exchanged token for user data'), 200
-    except spotipy.SpotifyOauthError as s:
-        app.logger.error(f"Spotify OAuth error: {s}")
-        return f'A Spotify OAuth error occurred: {s}', 401
-
-
 @app.route('/callback', methods=['GET'])
 def callback():
     code = request.args.get('code')
     if not code:
         return 'Authorization failed', 401
     try:
-        return jsonify(f'http://localhost:9000/?code={code}')
+        return redirect(f'http://localhost:9000/?code={code}')
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
@@ -122,6 +99,29 @@ def logout(user_id):
         return 'Session expired or user not logged in.', 403
 
 
+@app.route('/exchangeCodeSession/<code>', methods=['POST'])
+def add_user_data_to_session(code):
+    if not code:
+        return 'Authorization Failed', 401
+    try:
+        sp_oauth = spotipy.oauth2.SpotifyOAuth(
+            client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
+            scope='playlist-modify-public playlist-modify-private playlist-read-private',
+            cache_handler=cache_handler
+        )
+        token_info = sp_oauth.get_access_token(code)
+        access_token = token_info['access_token']
+        sp = spotipy.Spotify(auth=access_token)
+        user = sp.current_user()
+        user_data = {'token': token_info, 'username': user['display_name'],
+                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
+        session[f"user_{user['id']}"] = user_data
+        return jsonify({'username': user['display_name'], 'userID': user['id']})
+    except spotipy.SpotifyOauthError as s:
+        app.logger.error(f"Spotify OAuth error: {s}")
+        return f'A Spotify OAuth error occurred: {s}', 401
+
+
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
 @app.route('/setPlaylistName/<name>/<user_id>', methods=['POST'])
 def register_playlist(name, user_id):
@@ -138,7 +138,7 @@ def register_playlist(name, user_id):
 
 @app.route('/receiveMetadata/<user_id>', methods=['POST'])
 def receive_metadata(user_id):
-    user_data = get_user_data_from_session(user_id)
+    user_data = session.get(f'user_{user_id}')
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
@@ -160,9 +160,9 @@ def receive_metadata(user_id):
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/<user_id>/getResults', methods=['GET'])
+@app.route('/getResults/<user_id>', methods=['GET'])
 def send_results(user_id):
-    user_data = get_user_data_from_session(user_id)
+    user_data = session.get(f'user_{user_id}')
     if user_data:
         results = user_data.get('added_songs')
         return jsonify(results)
@@ -172,7 +172,7 @@ def send_results(user_id):
 
 @app.route('/getFailed/<user_id>', methods=['GET'])
 def send_failed(user_id):
-    user_data = get_user_data_from_session(user_id)
+    user_data = session.get(f'user_{user_id}')
     if user_data:
         failed = user_data.get('failed_songs')
         return jsonify(failed)
@@ -182,7 +182,7 @@ def send_failed(user_id):
 
 @app.route('/getDisplayName/<user_id>', methods=['GET'])
 def send_display_name(user_id):
-    user_data = get_user_data_from_session(user_id)
+    user_data = session.get(f'user_{user_id}')
     if user_data:
         return jsonify(user_data['username'])
     else:
@@ -223,7 +223,7 @@ def add_session():
 @app.route('/test_get/<user_id>', methods=['GET'])
 def get_session(user_id):
     data = session.get(user_id)
-    return jsonify(data)
+    return data
 
 
 @app.route('/test_clear', methods=['POST'])
