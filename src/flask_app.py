@@ -36,11 +36,9 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 # CORS(app, resources={r"/*": {"origins": "http://myfrontend.com"}})
 load_dotenv()
 
-driver = Driver()
-
 MY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
 MY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
-MY_REDIRECT_URI = 'http://localhost:5000/callback'
+MY_REDIRECT_URI = 'https://project-audio-reaper-pure-4.onrender.com/callback'
 cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
 print('Redis Instance Running? ' + str(redis_client.ping()))
 
@@ -113,26 +111,6 @@ def add_user_data_to_session(code):
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
-
-
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.pop('token_info', None)
-    session.pop('auth_manager_state', None)
-    for key in list(session.keys()):
-        session.pop(key)
-    session.clear()
-    driver.clear_spotify_object()
-    print(f"{driver.get_username()} is logged out.")
-    return jsonify({'message': 'Logged out successfully'})
-    # try:
-    #     if session.get(['token_info']) is not None:
-    #         session.pop('token_info', None)
-    #         return jsonify({'message': 'Logged out successfully'})
-    #     elif session.get(['token_info']) is None:
-    #         return jsonify({'message': 'Error: User not logged in!'})
-    # except Exception as e:
-    #     return jsonify({'message': f"Error logging out: {e}"}), 500
 
 
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
@@ -247,5 +225,3 @@ def clear_session():
 if __name__ == '__main__':
     # the debug set to true logs stuff to the console, so we can debug (only when developing)
     app.run(debug=False, port=5000)
-    # remember to set debug to false when in prod
-    app.run(debug=True, port=5000)
