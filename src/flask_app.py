@@ -43,18 +43,10 @@ cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
 print('Redis Instance Running? ' + str(redis_client.ping()))
 
 
-def get_user_data_from_session(user_id):
-    data = session.get(f'user_{user_id}')
-    if data:
-        return data
-    else:
-        return None
-
-
 def update_user_data_in_session(user_id, data):
     session[f'user_{user_id}'] = data
     session.modified = True
-    print(f'session data updated:\n{session.get(user_id)}')
+    print('session data updated')
 
 
 @app.route('/login', methods=['GET'])
@@ -194,7 +186,6 @@ def debug_sessions():
     if app.debug:
         all_sessions = {}
         for key in session.keys():
-            print(key)
             try:
                 value = session[key]
                 if isinstance(value, (str, int, float, bool, list, dict)):
