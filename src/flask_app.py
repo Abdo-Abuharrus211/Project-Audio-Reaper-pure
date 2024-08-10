@@ -53,7 +53,7 @@ def update_user_data_in_session(user_id, data):
 def login():
     sp_oauth = spotipy.oauth2.SpotifyOAuth(
         client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
-        scope='playlist-modify-public playlist-modify-private playlist-read-private',
+        scope='user-read-private playlist-modify-public playlist-modify-private playlist-read-private',
         cache_handler=cache_handler
     )
     auth_url = sp_oauth.get_authorize_url()
@@ -97,7 +97,7 @@ def add_user_data_to_session(code):
     try:
         sp_oauth = spotipy.oauth2.SpotifyOAuth(
             client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
-            scope='playlist-modify-public playlist-modify-private playlist-read-private',
+            scope='user-read-private playlist-modify-public playlist-modify-private playlist-read-private',
             cache_handler=cache_handler
         )
         token_info = sp_oauth.get_access_token(code)
