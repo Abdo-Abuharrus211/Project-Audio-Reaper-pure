@@ -24,9 +24,10 @@ redis_client = redis.from_url(os.getenv('REDIS_HOST'))
 app.config['SESSION_REDIS'] = redis_client
 
 # TODO: Determine if these configs are needed
-# app.config['SESSION_USE_SIGNER'] = True
-# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
-# app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_SECURE'] = True  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 
