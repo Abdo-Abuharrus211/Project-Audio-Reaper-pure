@@ -27,7 +27,7 @@ app.config['SESSION_REDIS'] = redis_client
 app.config['SESSION_COOKIE_SECURE'] = True  # Set to True if using HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Ensure the cookie is sent with cross-site requests
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 
