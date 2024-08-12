@@ -76,13 +76,13 @@ def callback():
         return f'An error occurred: {e}', 500
 
 
-@app.route('/logout/<user_id>', methods=['POST'])
-def logout(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
+@app.route('/logout/<username>', methods=['POST'])
+def logout(username):
+    if username in session:
         try:
-            session.pop(f'user_{user_id}', None)
-            session.pop('spotify_auth_state', None)
+            session.clear()
+            # session.pop(f'user_{username}', None)
+            # session.pop('spotify_auth_state', None)
             return jsonify({'message': 'Logged out successfully'})
         except Exception as e:
             return f'An error occurred: {e}', 500
