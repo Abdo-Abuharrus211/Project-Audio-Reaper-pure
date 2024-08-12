@@ -104,10 +104,16 @@ def add_user_data_to_session(code):
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         user = sp.current_user()
-        user_data = {'token': token_info, 'username': user['display_name'],
-                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
-        session[f"user_{user['id']}"] = user_data
-        return jsonify({'username': user['display_name'], 'userID': user['id']})
+        # user_data = {'token': token_info, 'username': user['display_name'],
+        # 'playlist_name': None, 'added_songs': None, 'failed_songs': None}
+        session['token'] = token_info
+        session['username'] = user['display_name']
+        session['user_id'] = user['id']
+        session['playlist_name'] = None
+        session['added_songs'] = None
+        session['failed_songs'] = None
+        # session[f"user_{user['id']}"] = user_data
+        return jsonify({'username': user['display_name']})
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
