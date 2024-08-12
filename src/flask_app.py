@@ -133,23 +133,22 @@ def register_playlist(name, username):
         return 'Session expired or user not logged in.', 403
 
 
-@app.route('/receiveMetadata/<user_id>', methods=['POST'])
-def receive_metadata(user_id):
-    user_data = session.get(f'user_{user_id}')
+@app.route('/receiveMetadata/<username>', methods=['POST'])
+def receive_metadata(username):
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
-    if user_data:
+    if username in session:
         try:
-            token_info = user_data['token']
+            token_info = session['token']
             sp = spotipy.Spotify(auth=token_info['access_token'])
             driver = Driver()
-            driver.set_username(user_data['username'])
-            driver.set_playlist_name(user_data['playlist_name'])
+            driver.set_username(username)
+            driver.set_playlist_name(session['playlist_name'])
             driver.set_sp_object(sp)
             driver.harvest(data)
-            user_data['failed_songs'] = driver.get_failed()
-            update_user_data_in_session(user_id, user_data)  # update user data in session
+            session['failed_songs'] = driver.get_failed()
+            # update_user_data_in_session(username, user_data)  # update user data in session
             return jsonify({"message": "Metadata received"})
         except Exception as e:
             return f'An error occurred: {e}', 500
@@ -157,31 +156,28 @@ def receive_metadata(user_id):
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getResults/<user_id>', methods=['GET'])
-def send_results(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        results = user_data.get('added_songs')
+@app.route('/getResults/<username>', methods=['GET'])
+def send_results(username):
+    if username in session:
+        results = session['added_songs']
         return jsonify(results)
     else:
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getFailed/<user_id>', methods=['GET'])
-def send_failed(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        failed = user_data.get('failed_songs')
+@app.route('/getFailed/<username>', methods=['GET'])
+def send_failed(username):
+    if username in session:
+        failed = session['failed_songs']
         return jsonify(failed)
     else:
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getDisplayName/<user_id>', methods=['GET'])
+@app.route('/getDisplayName/', methods=['GET'])
 def send_display_name(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        return jsonify(user_data['username'])
+    if session:
+        return jsonify(session['username'])
     else:
         return 'Session expired or user not logged in', 403
 
