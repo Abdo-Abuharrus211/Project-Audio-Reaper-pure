@@ -23,7 +23,6 @@ app.config['SESSION_PERMANENT'] = False
 redis_client = redis.from_url(os.getenv('REDIS_HOST'))
 app.config['SESSION_REDIS'] = redis_client
 
-# TODO: Determine if these configs are needed
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
@@ -103,15 +102,12 @@ def add_user_data_to_session(code):
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         user = sp.current_user()
-
         # Log session and token information
         app.logger.debug(f"Session ID: {session.sid}")
         app.logger.debug(f"Access Token: {access_token}")
         app.logger.debug(f"User: {user['display_name']}")
 
         session.clear()
-        # user_data = {'token': token_info, 'username': user['display_name'],
-        # 'playlist_name': None, 'added_songs': None, 'failed_songs': None}
         session['token'] = token_info
         session['username'] = user['display_name']
         session['user_id'] = user['id']
