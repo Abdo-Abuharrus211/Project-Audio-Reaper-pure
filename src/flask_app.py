@@ -121,7 +121,6 @@ def add_user_data_to_session(code):
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
 @app.route('/setPlaylistName/<name>/', methods=['POST'])
 def register_playlist(name):
-
     if session:
         if not name or not isinstance(name, str):
             return jsonify({"message": "Non valid value" + name}), 400
@@ -179,48 +178,6 @@ def send_display_name():
         return jsonify(session['username'])
     else:
         return 'Session expired or user not logged in', 403
-
-
-# Test routes ahead
-@app.route('/debug/sessions', methods=['GET'])
-def debug_sessions():
-    if app.debug:
-        all_sessions = {}
-        for key in session.keys():
-            try:
-                value = session[key]
-                if isinstance(value, (str, int, float, bool, list, dict)):
-                    all_sessions[key] = value
-                else:
-                    all_sessions[key] = str(value)
-            except Exception as e:
-                all_sessions[key] = f"Error retrieving session data: {str(e)}"
-
-        return jsonify({
-            "current_sessions": all_sessions,
-            "session_interface": str(type(app.session_interface)),
-            "session_redis_url": str(app.config.get('SESSION_REDIS'))
-        })
-    else:
-        return jsonify({"error": "This endpoint is only available in debug mode"}), 403
-
-
-@app.route('/test_add', methods=['POST'])
-def add_session():
-    session['Citron'] = "Limon"
-    return jsonify('Success')
-
-
-@app.route('/test_get/<user_id>', methods=['GET'])
-def get_session(user_id):
-    data = session.get(user_id)
-    return data
-
-
-@app.route('/test_clear', methods=['POST'])
-def clear_session():
-    session.clear()
-    return jsonify('Success')
 
 
 if __name__ == '__main__':
