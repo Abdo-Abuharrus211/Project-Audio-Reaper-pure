@@ -24,9 +24,9 @@ redis_client = redis.from_url(os.getenv('REDIS_HOST'))
 app.config['SESSION_REDIS'] = redis_client
 
 # TODO: Determine if these configs are needed
-# app.config['SESSION_USE_SIGNER'] = True
-# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
-# app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure the cookie is sent with cross-site requests
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=120)
 
@@ -120,13 +120,13 @@ def add_user_data_to_session(code):
 
 
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
-@app.route('/setPlaylistName/<name>/<user_id>', methods=['POST'])
-def register_playlist(name, user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
+@app.route('/setPlaylistName/<name>/<username>', methods=['POST'])
+def register_playlist(name, username):
+
+    if username in session:
         if not name or not isinstance(name, str):
             return jsonify({"message": "Non valid value" + name}), 400
-        user_data['playlist_name'] = name
+        session['playlist_name'] = name
         print("Playlist is called: " + name)
         return jsonify({"message": "Playlist name set to " + name})
     else:
