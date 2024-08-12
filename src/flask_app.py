@@ -39,7 +39,7 @@ load_dotenv()
 MY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
 MY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
 MY_REDIRECT_URI = 'https://project-audio-reaper-pure-4.onrender.com/callback'
-cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
+# cache_handler = spotipy.cache_handler.RedisCacheHandler(redis_client)
 print('Redis Instance Running? ' + str(redis_client.ping()))
 
 
@@ -54,7 +54,7 @@ def login():
     sp_oauth = spotipy.oauth2.SpotifyOAuth(
         client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
         scope='user-read-private playlist-modify-public playlist-modify-private playlist-read-private',
-        cache_handler=cache_handler
+        cache_handler=None, cache_path=None
     )
     auth_url = sp_oauth.get_authorize_url()
     session['spotify_auth_state'] = sp_oauth.state
@@ -76,13 +76,13 @@ def callback():
         return f'An error occurred: {e}', 500
 
 
-@app.route('/logout/<user_id>', methods=['POST'])
-def logout(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
+@app.route('/logout', methods=['POST'])
+def logout():
+    if session:
         try:
-            session.pop(f'user_{user_id}', None)
-            session.pop('spotify_auth_state', None)
+            session.clear()
+            # session.pop(f'user_{username}', None)
+            # session.pop('spotify_auth_state', None)
             return jsonify({'message': 'Logged out successfully'})
         except Exception as e:
             return f'An error occurred: {e}', 500
@@ -98,52 +98,56 @@ def add_user_data_to_session(code):
         sp_oauth = spotipy.oauth2.SpotifyOAuth(
             client_id=MY_CLIENT_ID, client_secret=MY_CLIENT_SECRET, redirect_uri=MY_REDIRECT_URI,
             scope='user-read-private playlist-modify-public playlist-modify-private playlist-read-private',
-            cache_handler=cache_handler
+            cache_handler=None, cache_path=None
         )
-        token_info = sp_oauth.get_access_token(code)
+        token_info = sp_oauth.get_access_token(code, check_cache=False)
         access_token = token_info['access_token']
         sp = spotipy.Spotify(auth=access_token)
         user = sp.current_user()
-        user_data = {'token': token_info, 'username': user['display_name'],
-                     'playlist_name': None, 'added_songs': None, 'failed_songs': None}
-        session[f"user_{user['id']}"] = user_data
-        return jsonify({'username': user['display_name'], 'userID': user['id']})
+        session.clear()
+        session['token'] = token_info
+        session['username'] = user['display_name']
+        session['user_id'] = user['id']
+        session['playlist_name'] = None
+        session['added_songs'] = None
+        session['failed_songs'] = None
+        # session[f"user_{user['id']}"] = user_data
+        return jsonify({'username': user['display_name']})
     except spotipy.SpotifyOauthError as s:
         app.logger.error(f"Spotify OAuth error: {s}")
         return f'A Spotify OAuth error occurred: {s}', 401
 
 
 # TODO: Add exception handling here and beyond and test if actually work when multiple users logged in at once
-@app.route('/setPlaylistName/<name>/<user_id>', methods=['POST'])
-def register_playlist(name, user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
+@app.route('/setPlaylistName/<name>/', methods=['POST'])
+def register_playlist(name):
+
+    if session:
         if not name or not isinstance(name, str):
             return jsonify({"message": "Non valid value" + name}), 400
-        user_data['playlist_name'] = name
+        session['playlist_name'] = name
         print("Playlist is called: " + name)
         return jsonify({"message": "Playlist name set to " + name})
     else:
         return 'Session expired or user not logged in.', 403
 
 
-@app.route('/receiveMetadata/<user_id>', methods=['POST'])
-def receive_metadata(user_id):
-    user_data = session.get(f'user_{user_id}')
+@app.route('/receiveMetadata', methods=['POST'])
+def receive_metadata():
     data = request.get_json()
     if not data:
         return jsonify({"message": "Data not valid"}), 400
-    if user_data:
+    if session:
         try:
-            token_info = user_data['token']
+            token_info = session['token']
             sp = spotipy.Spotify(auth=token_info['access_token'])
             driver = Driver()
-            driver.set_username(user_data['username'])
-            driver.set_playlist_name(user_data['playlist_name'])
+            driver.set_username(session['username'])
+            driver.set_playlist_name(session['playlist_name'])
             driver.set_sp_object(sp)
             driver.harvest(data)
-            user_data['failed_songs'] = driver.get_failed()
-            update_user_data_in_session(user_id, user_data)  # update user data in session
+            session['failed_songs'] = driver.get_failed()
+            # update_user_data_in_session(username, user_data)  # update user data in session
             return jsonify({"message": "Metadata received"})
         except Exception as e:
             return f'An error occurred: {e}', 500
@@ -151,31 +155,28 @@ def receive_metadata(user_id):
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getResults/<user_id>', methods=['GET'])
-def send_results(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        results = user_data.get('added_songs')
+@app.route('/getResults', methods=['GET'])
+def send_results():
+    if session:
+        results = session['added_songs']
         return jsonify(results)
     else:
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getFailed/<user_id>', methods=['GET'])
-def send_failed(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        failed = user_data.get('failed_songs')
+@app.route('/getFailed', methods=['GET'])
+def send_failed():
+    if session:
+        failed = session['failed_songs']
         return jsonify(failed)
     else:
         return 'Session expired or user not logged in', 403
 
 
-@app.route('/getDisplayName/<user_id>', methods=['GET'])
-def send_display_name(user_id):
-    user_data = session.get(f'user_{user_id}')
-    if user_data:
-        return jsonify(user_data['username'])
+@app.route('/getDisplayName', methods=['GET'])
+def send_display_name():
+    if session:
+        return jsonify(session['username'])
     else:
         return 'Session expired or user not logged in', 403
 
